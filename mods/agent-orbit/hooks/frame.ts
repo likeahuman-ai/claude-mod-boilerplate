@@ -44,6 +44,11 @@ function fit(text: string, width: number): string {
   return text.length > width ? `${text.slice(0, Math.max(0, width - 1))}…` : text.padEnd(width)
 }
 
+function ago(ms: number): string {
+  const s = Math.floor(ms / 1000)
+  return s < 1 ? 'now' : `${s}s`
+}
+
 export function drawFrame(live: Live, columns: number, rows: number, now: number): string {
   const W = Math.max(1, columns)
   const H = Math.max(1, rows)
@@ -67,17 +72,44 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
     for (const ch of text) put(x + i++, y, ch, fg)
   }
 
-  // The layout, top to bottom: sky, list.
+  // The layout, top to bottom: legend, sky, caption, ticker, list.
   const loops = [live.main, ...live.agents]
   const tall = H >= 28
   const perLoop = narrow && tall ? 2 : 1
-  const listRows = Math.min(loops.length * perLoop, Math.max(2, Math.floor(H / 3)))
-  const skyH = Math.max(7, H - 1 - listRows)
-  const top = 0
+  let listRows = Math.min(loops.length * perLoop, Math.max(2, Math.floor(H / 3)))
+  let ticker = H >= 34 ? 3 : H >= 26 ? 2 : 0
+  let skyH = H - 1 - 1 - ticker - 1 - listRows
+  if (skyH < 9) {
+    ticker = 0
+    skyH = H - 3 - listRows
+  }
+  if (skyH < 7) {
+    listRows = Math.max(1, H - 3 - 7)
+    skyH = H - 3 - listRows
+  }
+  const top = 1
   const cx = W / 2
   const cy = top + skyH / 2
   const rx = Math.max(6, Math.min(W * 0.34, skyH * 1.5))
   const ry = Math.max(2, skyH * 0.34)
+
+  // 1. The legend: what each mark means.
+  const legend: [string, number, string][] = [
+    ['◉', LIME, 'main session'],
+    ['●', 0xff7ad9, 'agent'],
+    ['◆', CYAN, 'reads a file'],
+    ['◆', AMBER, 'acts'],
+    ['★', LIME, 'task out'],
+    ['✔', GREEN, 'done'],
+  ]
+  let lx = 1
+  for (const [mark, color, label] of legend) {
+    const item = narrow ? label.split(' ')[0] ?? label : label
+    if (lx + 3 + item.length > W) break
+    put(lx, 0, mark, color)
+    write(lx + 2, 0, item, MUTED)
+    lx += item.length + 4
+  }
 
   // 2. The sky: stars that twinkle.
   for (let s = 0; s < Math.floor((W * skyH) / 50); s++) {
@@ -146,7 +178,13 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
   }
   put(cx, cy, '◉', scale(LIME, 0.55 + 0.45 * beat))
   write(cx - 2, cy + 2, 'MAIN', LIME)
-  // 3. The agents: a trail and the name.
+  const mainContext = live.files.length > 0 ? live.files : live.main.context
+  mainContext.slice(0, skyH >= 14 ? 2 : 0).forEach((file, i) => {
+    const label = `◇ ${file}`
+    if (cy + 3 + i < top + skyH) write(cx - Math.floor(label.length / 2), cy + 3 + i, label, scale(LIME, 0.5))
+  })
+
+  // 3. The agents: a trail, the name, and the files it read as satellites (its context).
   for (const agent of live.agents) {
     const done = agent.endedAt !== undefined
     if (!done) {
@@ -163,9 +201,38 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
     const right = p.x >= cx ? p.x + 2 + name.length <= W : p.x - 1 - name.length < 0
     const nx = right ? p.x + 2 : p.x - 1 - name.length
     write(nx, p.y, name, done ? scale(GREEN, 0.8) : agent.color)
+    agent.context.slice(skyH >= 14 ? -3 : -1).forEach((file, i) => {
+      const y = p.y + 1 + i
+      if (y >= top + skyH) return
+      const label = fit(`◇ ${file}`, narrow ? 14 : 22).trimEnd()
+      const sx = right ? p.x + 2 : p.x - 1 - label.length
+      write(sx, y, label, scale(agent.color, done ? 0.4 : 0.6))
+    })
   }
 
+  // 4. The caption: the newest event in plain words, typed out.
   let y = top + skyH
+  const newest = live.events[live.events.length - 1]
+  if (newest) {
+    const shown = newest.text.slice(0, Math.max(1, Math.floor((now - newest.at) / 12)))
+    const fresh = now - newest.at < 1500
+    put(1, y, '▶', fresh ? newest.color : scale(newest.color, 0.6))
+    write(3, y, fit(shown, W - 4), fresh ? TEXT : scale(TEXT, 0.75))
+  } else {
+    write(3, y, fit('Waiting for a prompt. Give Claude a task with agents.', W - 4), DIM)
+  }
+  y++
+
+  // 5. The ticker: what happened just before, with how long ago.
+  const older = live.events.slice(-1 - ticker, -1).reverse()
+  for (let i = 0; i < ticker; i++) {
+    const event = older[i]
+    if (event) {
+      write(1, y, fit(ago(now - event.at), 4), DIM)
+      write(6, y, fit(event.text, W - 7), scale(event.color, 0.55 - i * 0.1))
+    }
+    y++
+  }
 
   // 6. The list: one live row per loop.
   const running = live.agents.filter(a => !a.endedAt).length

@@ -15,6 +15,8 @@ export type Agent = {
   steps: Step[]
   reads: number
   acts: number
+  /** The files this agent read: its context, shown as satellites around it. */
+  context: string[]
 }
 
 export type Particle = {
@@ -25,10 +27,14 @@ export type Particle = {
   at: number
 }
 
+/** One thing that happened, in plain words, for the caption and the ticker. */
+export type Event = { text: string; color: number; at: number }
+
 export type Live = {
   main: Agent
   agents: Agent[]
   particles: Particle[]
+  events: Event[]
   files: string[]
   skills: string[]
 }
@@ -47,6 +53,7 @@ export function newLive(now: number): Live {
     main: blankAgent(MAIN, 'main session', now, -1, LIME),
     agents: [],
     particles: [],
+    events: [],
     files: [],
     skills: [],
   }
@@ -65,7 +72,12 @@ export function blankAgent(id: string, type: string, now: number, slot: number, 
     steps: [],
     reads: 0,
     acts: 0,
+    context: [],
   }
+}
+
+export function say(live: Live, text: string, color: number, at: number): void {
+  live.events = [...live.events, { text, color, at }].slice(-20)
 }
 
 export function hash(text: string): number {
@@ -81,4 +93,33 @@ export function shortModel(model: string): string {
 
 export function baseName(text: string): string {
   return text.split('/').pop()?.slice(0, 22) ?? text
+}
+
+/** A tool call in plain words: "reads PROBLEMS.md", "searches for TODO". */
+export function verbOf(tool: string, what: string): string {
+  const name = baseName(what)
+  switch (tool) {
+    case 'Read':
+      return `reads ${name}`
+    case 'Grep':
+      return `searches for "${what.slice(0, 24)}"`
+    case 'Glob':
+      return `looks for files ${what.slice(0, 24)}`
+    case 'LS':
+      return `lists ${name}`
+    case 'WebFetch':
+    case 'WebSearch':
+      return `reads the web: ${what.slice(0, 28)}`
+    case 'Skill':
+      return `loads the skill ${what}`
+    case 'Edit':
+    case 'Write':
+      return `edits ${name}`
+    case 'Bash':
+      return `runs ${what.slice(0, 28)}`
+    case 'Agent':
+      return `starts an agent: ${what.slice(0, 28)}`
+    default:
+      return `uses ${tool}`
+  }
 }

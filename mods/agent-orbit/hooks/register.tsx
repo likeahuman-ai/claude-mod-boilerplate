@@ -3,7 +3,7 @@ import type { Register } from 'claude-code'
 
 import { drawFrame } from './frame'
 import type { Agent, Step } from './live'
-import { CYAN, MAIN, PALETTE, baseName, blankAgent, hash, newLive, shortModel } from './live'
+import { AMBER, CYAN, GREEN, LIME, MAIN, PALETTE, baseName, blankAgent, hash, newLive, say, shortModel, verbOf } from './live'
 
 const PANE = 'agent-orbit'
 const RASTER = 'orbit'
@@ -60,6 +60,7 @@ export const register: Register = on => {
   // A prompt the person enters counts as their ask: the pane opens at any width.
   on('prompt.submit', async ($, e, next) => {
     void $.ui.open({ id: PANE, title: 'Agent orbit' }).catch(() => {})
+    if (e.origin.kind !== 'plugin') say(live, 'You give Main a task', LIME, Date.now())
     await update($, version, v => v + 1).catch(() => {})
     return next(e)
   })
@@ -67,12 +68,14 @@ export const register: Register = on => {
   // The context the session carries before its first word: its instruction files.
   on('prompt.context', async ($, e, next) => {
     live.files = (e.instructionFiles ?? []).map(file => `${file.kind}: ${baseName(file.path)}`)
+    if (live.files.length > 0) say(live, `Main loads ${live.files.length} instruction files (CLAUDE.md)`, CYAN, Date.now())
     await update($, version, v => v + 1).catch(() => {})
     return next(e)
   })
 
   on('skill.prompt', async ($, e, next) => {
     if (!live.skills.includes(e.skill)) live.skills.push(e.skill)
+    say(live, `A skill loads: ${e.skill}`, CYAN, Date.now())
     return next(e)
   })
 
@@ -81,11 +84,14 @@ export const register: Register = on => {
     const started = await next(e)
     if (started.deny === undefined && started.agentId) {
       const agent = loopOf(started.agentId)
+      const same = live.agents.filter(a => a.type === e.subagentType).length + 1
       agent.type = e.subagentType
+      agent.name = `${e.subagentType} ${same}`
       agent.task = e.description
       agent.model = shortModel(started.model)
       agent.startedAt = Date.now()
       live.particles.push({ kind: 'spawn', agentId: agent.id, label: '', seed: 0, at: Date.now() })
+      say(live, `Main hands ${agent.name} a task: "${e.description}" (${agent.model})`, LIME, Date.now())
       await update($, version, v => v + 1).catch(() => {})
     }
     return started
@@ -95,10 +101,14 @@ export const register: Register = on => {
   on('tool.call', async ($, e, next) => {
     const agent = loopOf(e.agentId)
     const what = whatOf(e as unknown as Record<string, unknown>, e.tool)
-    const step: Step = { tool: e.tool, what, isRead: READS.has(e.tool), at: Date.now() }
+    const step: Step = { tool: e.tool, what: verbOf(e.tool, what), isRead: READS.has(e.tool), at: Date.now() }
     agent.steps = [...agent.steps, step].slice(-30)
-    if (step.isRead) agent.reads++
-    else agent.acts++
+    if (step.isRead) {
+      agent.reads++
+      const file = baseName(what)
+      agent.context = [...agent.context.filter(f => f !== file), file].slice(-4)
+    } else agent.acts++
+    say(live, `${agent.name} ${step.what}`, step.isRead ? CYAN : AMBER, Date.now())
     if (agent.id !== MAIN) {
       live.particles.push({
         kind: step.isRead ? 'read' : 'act',
@@ -118,6 +128,8 @@ export const register: Register = on => {
       const agent = live.agents.find(a => a.id === e.agentId)
       if (agent && agent.endedAt === undefined) {
         agent.endedAt = Date.now()
+        const s = Math.round((agent.endedAt - agent.startedAt) / 1000)
+        say(live, `${agent.name} is done after ${s}s: read ${agent.reads}, did ${agent.acts}`, GREEN, Date.now())
       }
       await update($, version, v => v + 1).catch(() => {})
     }
@@ -144,6 +156,9 @@ export const register: Register = on => {
           <Text>
             {agent.endedAt ? 'done' : 'runs'} · {agent.name} {agent.model} · read {agent.reads} · did {agent.acts}
           </Text>
+        ))}
+        {live.events.slice(-5).map(event => (
+          <Text dimColor>{event.text}</Text>
         ))}
       </Box>
     )
