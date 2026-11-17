@@ -1,6 +1,7 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
+import { drawSvg } from './desktop'
 import { drawFrame } from './frame'
 import type { Agent, Step } from './live'
 import { AMBER, CYAN, GREEN, LIME, MAIN, PALETTE, baseName, blankAgent, hash, newLive, say, shortModel, verbOf } from './live'
@@ -15,6 +16,9 @@ const version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)
 // The live model and the size of the mounted Raster. Both start over on a reload.
 const live = newLive(Date.now())
 let size: { columns: number; rows: number } | undefined
+// True once a desktop pane drew the SVG view, and when it last redrew.
+let vectorShown = false
+let lastRedraw = 0
 // Agents whose end the mod already reported to the chat.
 const reported = new Set<string>()
 
@@ -48,6 +52,12 @@ export const register: Register = on => {
       if (size) {
         const cells = drawFrame(live, size.columns, size.rows, now)
         void $.ui.blit({ requestId: PANE, key: RASTER, cells, ...size }).catch(() => {})
+      }
+      // The desktop SVG animates by itself; it only needs a redraw every 2 s while agents run.
+      const busy = live.agents.some(a => a.endedAt === undefined)
+      if (vectorShown && busy && now - lastRedraw > 2000) {
+        lastRedraw = now
+        void update($, version, v => v + 1).catch(() => {})
       }
     })
 
@@ -166,6 +176,15 @@ export const register: Register = on => {
       const rows = Math.max(10, Math.min(48, e.props.scroll.bodyRows))
       size = { columns, rows }
       return <Raster key={RASTER} columns={columns} rows={rows} cells={drawFrame(live, columns, rows, Date.now())} />
+    }
+
+    // The desktop: one animated SVG with hover tooltips, drawn again on each change.
+    if (e.surface === 'desktop') {
+      const { Svg } = $.ui.resolve(e)
+      await read($, version)
+      vectorShown = true
+      lastRedraw = Date.now()
+      return <Svg source={drawSvg(live, Date.now())} alt="Agent orbit: the main session, its agents, and the files they read" isInteractive={true} />
     }
 
     // Other surfaces: a plain text view of the same model.
