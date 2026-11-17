@@ -1,0 +1,9 @@
+{
+  "name": "my-mod",
+  "version": "0.1.0",
+  "description": "My first Claude Code mod: a pane beside the chat",
+  "license": "MIT",
+  "author": {
+    "name": "Your name"
+  }
+}
