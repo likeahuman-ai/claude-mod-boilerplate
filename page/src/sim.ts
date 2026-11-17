@@ -21,7 +21,8 @@ if (typeof U8.toBase64 !== 'function') {
 }
 
 const READS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Skill', 'LS'])
-const ROOT = '/Users/you/practice-repo/'
+const ROOT = '/Users/you/agent-orbit-class/'
+const HOOKS = 'mods/agent-orbit/hooks/'
 
 export type ChatItem =
   | { kind: 'user'; text: string; at: number }
@@ -37,12 +38,12 @@ function whatOf(input: Record<string, unknown>, tool: string): string {
 }
 
 export const PROMPT =
-  'Use three Explore agents in parallel on the haiku model. One reads PROBLEMS.md, one reads SUGGESTIONS.md, one reads PARKING.md. Each returns the top 3 themes, one line each. Do not change any file.'
+  'Use three Explore agents in parallel on the haiku model. One reads mods/agent-orbit/hooks/register.tsx, one reads mods/agent-orbit/hooks/frame.ts, one reads mods/agent-orbit/hooks/desktop.ts. Each explains in 3 lines what its file does. Do not change any file.'
 
 export const DEBRIEF = [
-  'Explore 1 read the most (3 files) and found speed and browser bugs: a slow login on a phone, an export that fails in Safari.',
-  'Explore 2 found one theme in SUGGESTIONS.md: trust in the data. Show the last sync time in the header.',
-  'Explore 3 found look and feel in PARKING.md: a dark theme for the dashboard and a bigger font.',
+  'Explore 1 read the most (3 files): register.tsx holds the hooks that fill the live model, open the pane and send this debrief.',
+  'Explore 2: frame.ts draws one frame of the orbit as terminal cells, 16 times a second, from that same model.',
+  'Explore 3: desktop.ts draws the same model as one SVG, with SMIL motion that a redraw continues.',
 ]
 
 export const LENGTH = 23 // seconds, then the run starts again
@@ -67,20 +68,20 @@ export class Run {
       { at: 0.4, run: () => this.promptSubmit() },
       { at: 1.0, run: () => this.promptContext([{ kind: 'project', path: `${ROOT}CLAUDE.md` }, { kind: 'user', path: '/Users/you/.claude/CLAUDE.md' }]) },
       { at: 1.7, run: () => this.toolCall(undefined, 'Glob', { pattern: '*.md' }) },
-      { at: 2.3, run: () => this.agentSpawn(ids[0]!, 'Explore', 'Themes in PROBLEMS.md') },
-      { at: 2.7, run: () => this.agentSpawn(ids[1]!, 'Explore', 'Themes in SUGGESTIONS.md') },
-      { at: 3.1, run: () => this.agentSpawn(ids[2]!, 'Explore', 'Themes in PARKING.md') },
-      { at: 3.8, run: read(ids[0], 'PROBLEMS.md') },
-      { at: 4.4, run: read(ids[1], 'SUGGESTIONS.md') },
-      { at: 5.0, run: read(ids[2], 'PARKING.md') },
-      { at: 5.9, run: read(ids[0], 'CLAUDE.md') },
-      { at: 6.6, run: bash(ids[2], 'grep -c "^- " PARKING.md') },
-      { at: 7.3, run: read(ids[1], 'PROBLEMS.md') },
-      { at: 8.0, run: bash(ids[0], 'wc -l PROBLEMS.md') },
-      { at: 8.8, run: read(ids[2], 'SUGGESTIONS.md') },
+      { at: 2.3, run: () => this.agentSpawn(ids[0]!, 'Explore', 'Explain register.tsx') },
+      { at: 2.7, run: () => this.agentSpawn(ids[1]!, 'Explore', 'Explain frame.ts') },
+      { at: 3.1, run: () => this.agentSpawn(ids[2]!, 'Explore', 'Explain desktop.ts') },
+      { at: 3.8, run: read(ids[0], HOOKS + 'register.tsx') },
+      { at: 4.4, run: read(ids[1], HOOKS + 'frame.ts') },
+      { at: 5.0, run: read(ids[2], HOOKS + 'desktop.ts') },
+      { at: 5.9, run: read(ids[0], HOOKS + 'live.ts') },
+      { at: 6.6, run: bash(ids[2], 'grep -c "<animate" desktop.ts') },
+      { at: 7.3, run: read(ids[1], HOOKS + 'live.ts') },
+      { at: 8.0, run: bash(ids[0], 'wc -l register.tsx') },
+      { at: 8.8, run: read(ids[2], 'CLAUDE.md') },
       { at: 9.7, run: () => this.turnComplete(ids[1]!) },
-      { at: 10.4, run: read(ids[0], 'FLOW.md') },
-      { at: 11.4, run: bash(ids[2], 'wc -l PARKING.md') },
+      { at: 10.4, run: read(ids[0], 'CLAUDE.md') },
+      { at: 11.4, run: bash(ids[2], 'wc -l desktop.ts') },
       { at: 12.2, run: () => this.turnComplete(ids[0]!) },
       { at: 14.0, run: () => this.turnComplete(ids[2]!) },
       { at: 16.2, run: () => this.claudeAnswers() },
@@ -208,7 +209,7 @@ export class Run {
     else
       this.chat.push({
         kind: 'claude',
-        text: 'The three agents are done. Top themes: speed and browser bugs, trust in the data, look and feel.',
+        text: 'The three agents are done. register.tsx fills the model, frame.ts draws it as cells, desktop.ts draws it as SVG.',
         at: Date.now(),
       })
   }

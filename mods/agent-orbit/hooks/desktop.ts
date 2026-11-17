@@ -37,17 +37,17 @@ export function drawSvg(live: Live, now: number): string {
   const running = live.agents.filter(a => a.endedAt === undefined).length
   const done = live.agents.length - running
 
-  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${VW}" height="${VH}" font-family="ui-sans-serif, -apple-system, 'Inter', sans-serif">`)
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${VW}" height="${VH}" font-family="Montserrat, 'Space Grotesk', ui-sans-serif, sans-serif">`)
   out.push(`<defs>
-    <radialGradient id="sky" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#16213a"/><stop offset="0.6" stop-color="#0b1020"/><stop offset="1" stop-color="#05070d"/></radialGradient>
-    <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f4ffd0"/><stop offset="0.45" stop-color="${hex(LIME)}"/><stop offset="1" stop-color="${hex(LIME)}" stop-opacity="0"/></radialGradient>
+    <radialGradient id="sky" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#15294A"/><stop offset="0.6" stop-color="#0F1F38"/><stop offset="1" stop-color="#08142A"/></radialGradient>
+    <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF8E7"/><stop offset="0.45" stop-color="${hex(LIME)}"/><stop offset="1" stop-color="${hex(LIME)}" stop-opacity="0"/></radialGradient>
     <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
   </defs>
   <style>
-    .label { fill: #e6ebf5; font-size: 13px; font-weight: 600; }
-    .sub { fill: #8b98b3; font-size: 11px; }
-    .chip { fill: #c9d4ea; font-size: 10.5px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .label { fill: #EAF1F8; font-size: 13px; font-weight: 700; }
+    .sub { fill: #9FB3C8; font-size: 11px; font-family: 'Space Grotesk', Montserrat, sans-serif; }
+    .chip { fill: #C7D4E2; font-size: 10.5px; font-family: 'Space Mono', ui-monospace, Menlo, monospace; }
     .agent:hover .halo { opacity: 0.55; }
     .agent { cursor: default; }
   </style>`)
@@ -60,13 +60,13 @@ export function drawSvg(live: Live, now: number): string {
     const y = (h >>> 11) % 400
     const r = 0.5 + ((h >>> 5) % 10) / 10
     const dur = 2400 + (h % 3000)
-    out.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="#cfe1ff"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="${dur}ms" begin="${phase(now, dur, h % 1000)}" repeatCount="indefinite"/></circle>`)
+    out.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="#C7D4E2"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="${dur}ms" begin="${phase(now, dur, h % 1000)}" repeatCount="indefinite"/></circle>`)
   }
 
   // The legend and the header.
   const legend: [string, string][] = [
     [hex(LIME), 'main session'],
-    ['#ff7ad9', 'agent'],
+    ['#E88F8F', 'agent'],
     [hex(CYAN), 'reads a file'],
     [hex(AMBER), 'acts'],
     [hex(GREEN), 'done'],
@@ -79,17 +79,17 @@ export function drawSvg(live: Live, now: number): string {
   out.push(`<text x="${VW - 22}" y="28" text-anchor="end" class="sub"><tspan fill="${hex(LIME)}" font-weight="700">${running}</tspan> running · <tspan fill="${hex(GREEN)}" font-weight="700">${done}</tspan> done · ${live.files.length || live.main.context.length} context files</text>`)
 
   // The orbit: a slow, flowing dashed ring.
-  out.push(`<ellipse cx="${CX}" cy="${CY}" rx="${RX}" ry="${RY}" fill="none" stroke="#2a3b5f" stroke-width="1.2" stroke-dasharray="2 7"><animate attributeName="stroke-dashoffset" from="0" to="-90" dur="6s" begin="${phase(now, 6000)}" repeatCount="indefinite"/></ellipse>`)
+  out.push(`<ellipse cx="${CX}" cy="${CY}" rx="${RX}" ry="${RY}" fill="none" stroke="#1F3D66" stroke-width="1.2" stroke-dasharray="2 7"><animate attributeName="stroke-dashoffset" from="0" to="-90" dur="6s" begin="${phase(now, 6000)}" repeatCount="indefinite"/></ellipse>`)
 
   // The chat: where the person types, and where the mod talks back.
   const chat = { x: 70, y: CY }
   const lastIn = [...live.events].reverse().find(e => e.text.startsWith('You give Main'))
   const lastOut = [...live.events].reverse().find(e => e.text.startsWith('The mod sends'))
   out.push(`<g><title>The chat: you give Main a task here, and the mod sends its debrief here.</title>
-    <rect x="${chat.x - 46}" y="${chat.y - 22}" width="92" height="44" rx="12" fill="#121a2e" stroke="#33466e"/>
+    <rect x="${chat.x - 46}" y="${chat.y - 22}" width="92" height="44" rx="12" fill="#0F1F38" stroke="#FFFFFF" stroke-opacity="0.12"/>
     <text x="${chat.x}" y="${chat.y - 2}" text-anchor="middle" class="label">CHAT</text>
     <text x="${chat.x}" y="${chat.y + 13}" text-anchor="middle" class="sub">you + Claude</text></g>`)
-  out.push(`<path id="chatline" d="M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}" stroke="#2a3b5f" stroke-width="1" stroke-dasharray="3 5" fill="none"/>`)
+  out.push(`<path id="chatline" d="M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}" stroke="#1F3D66" stroke-width="1" stroke-dasharray="3 5" fill="none"/>`)
   for (const [event, color, reverse] of [[lastIn, LIME, false], [lastOut, LIME, true]] as const) {
     if (!event || now - event.at > 2200) continue
     const path = reverse ? `M ${CX - 30} ${CY} L ${chat.x + 46} ${chat.y}` : `M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}`
@@ -112,7 +112,7 @@ export function drawSvg(live: Live, now: number): string {
   out.push(`<g><title>Main session. Context it carries: ${esc(mainCtx.join(', ') || 'none seen yet')}. Reads ${live.main.reads}, actions ${live.main.acts}.</title>
     <circle cx="${CX}" cy="${CY}" r="34" fill="url(#core)" opacity="0.55" filter="url(#soft)"/>
     <circle cx="${CX}" cy="${CY}" r="20" fill="${hex(LIME)}" filter="url(#glow)"><animate attributeName="r" values="19;22;19" dur="1.6s" begin="${phase(now, 1600)}" repeatCount="indefinite"/></circle>
-    <text x="${CX}" y="${CY + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="#0b1020">MAIN</text></g>`)
+    <text x="${CX}" y="${CY + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="#1C2B3A">MAIN</text></g>`)
   mainCtx.forEach((file, i) => {
     out.push(`<text x="${CX}" y="${CY + 54 + i * 14}" text-anchor="middle" class="chip" fill-opacity="0.7">◇ ${esc(cut(file, 26))}</text>`)
   })
@@ -160,7 +160,7 @@ Last: ${esc(last || '–')}</title>
       <circle class="halo" cx="${p.x}" cy="${p.y}" r="30" fill="${c}" opacity="0.18" filter="url(#soft)"/>
       ${isDone ? '' : `<circle cx="${p.x}" cy="${p.y}" r="21" fill="none" stroke="${c}" stroke-width="2" stroke-dasharray="22 110" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 ${p.x} ${p.y}" to="360 ${p.x} ${p.y}" dur="1.1s" begin="${phase(now, 1100, agent.slot * 300)}" repeatCount="indefinite"/></circle>`}
       <circle cx="${p.x}" cy="${p.y}" r="13" fill="${c}" filter="url(#glow)">${isDone ? '' : `<animate attributeName="opacity" values="0.75;1;0.75" dur="1.3s" begin="${phase(now, 1300, agent.slot * 400)}" repeatCount="indefinite"/>`}</circle>
-      ${isDone ? `<path d="M ${p.x - 5} ${p.y} l 3.5 4 l 7 -8" stroke="#0b1020" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
+      ${isDone ? `<path d="M ${p.x - 5} ${p.y} l 3.5 4 l 7 -8" stroke="#1C2B3A" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ''}
       <text x="${p.x}" y="${ty}" text-anchor="middle" class="label">${esc(cut(agent.name, 18))}</text>
       <text x="${p.x}" y="${ty + 15}" text-anchor="middle" class="sub">${esc(shortModel(agent.model))} · ${isDone ? `done in ${secs}s` : `${agent.reads} reads · ${agent.acts} acts`}</text>`)
     files.forEach((file, i) => {
@@ -170,7 +170,7 @@ Last: ${esc(last || '–')}</title>
   }
 
   // The caption bar: the newest event typed out, and the two before it.
-  out.push(`<rect x="16" y="${VH - 104}" width="${VW - 32}" height="88" rx="12" fill="#0e1528" stroke="#22304f"/>`)
+  out.push(`<rect x="16" y="${VH - 104}" width="${VW - 32}" height="88" rx="12" fill="#0F1F38" stroke="#FFFFFF" stroke-opacity="0.12"/>`)
   const newest = live.events[live.events.length - 1]
   if (newest) {
     const fresh = Math.max(0, now - newest.at)
@@ -178,16 +178,16 @@ Last: ${esc(last || '–')}</title>
     const typed = Math.min(1, fresh / (text.length * 18))
     out.push(`<clipPath id="type"><rect x="40" y="${VH - 94}" height="28" width="${typed * 680}"><animate attributeName="width" to="680" dur="${Math.max(0.01, (1 - typed) * text.length * 0.018)}s" fill="freeze"/></rect></clipPath>`)
     out.push(`<circle cx="30" cy="${VH - 79}" r="5" fill="${hex(newest.color)}" filter="url(#glow)"><animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/></circle>`)
-    out.push(`<text x="42" y="${VH - 74}" font-size="15" font-weight="600" fill="#f2f5fb" clip-path="url(#type)">${esc(text)}</text>`)
+    out.push(`<text x="42" y="${VH - 74}" font-size="15" font-weight="700" fill="#EAF1F8" clip-path="url(#type)">${esc(text)}</text>`)
   } else {
-    out.push(`<text x="30" y="${VH - 74}" font-size="14" fill="#8b98b3">Waiting for a prompt. Give Claude a task with agents.</text>`)
+    out.push(`<text x="30" y="${VH - 74}" font-size="14" fill="#9FB3C8">Waiting for a prompt. Give Claude a task with agents.</text>`)
   }
   live.events
     .slice(-3, -1)
     .reverse()
     .forEach((event, i) => {
       const s = Math.max(0, Math.round((now - event.at) / 1000))
-      out.push(`<text x="42" y="${VH - 50 + i * 18}" font-size="12" fill="${hex(event.color)}" fill-opacity="${0.75 - i * 0.25}"><tspan fill="#5b6785">${s}s ago  </tspan>${esc(cut(event.text, 96))}</text>`)
+      out.push(`<text x="42" y="${VH - 50 + i * 18}" font-size="12" fill="${hex(event.color)}" fill-opacity="${0.75 - i * 0.25}"><tspan fill="#9FB3C8" fill-opacity="0.7" font-family="Space Mono, monospace">${s}s ago  </tspan>${esc(cut(event.text, 96))}</text>`)
     })
 
   out.push(`</svg>`)

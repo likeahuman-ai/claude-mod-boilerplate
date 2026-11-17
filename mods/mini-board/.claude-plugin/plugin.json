@@ -1,8 +1,0 @@
-{
-  "name": "mini-board",
-  "version": "0.1.0",
-  "description": "A pane beside the chat that shows PROBLEMS.md, SUGGESTIONS.md and PARKING.md, and a /note command that parks a thought",
-  "types": "./types/index.d.ts",
-  "license": "MIT",
-  "author": { "name": "Like A Human" }
-}

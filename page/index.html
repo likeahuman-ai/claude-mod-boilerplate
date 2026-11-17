@@ -6,292 +6,315 @@
 <title>Agent orbit tutorial</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Space+Grotesk:wght@600&family=Space+Mono:ital@0;1&display=swap" rel="stylesheet">
 <style>
+/* Like A Human design law, dark mode (packages/dls/design/DESIGN.md). */
 :root {
-  --ink: #060a14;
-  --navy: #0b1222;
-  --deep: #0e1629;
-  --raise: #121c33;
-  --line: #1c2946;
-  --line-2: #2a3b5f;
-  --text: #e8edf7;
-  --muted: #8b98b3;
-  --faint: #56627e;
-  --lime: #c6ff3d;
-  --cyan: #5ee0ff;
-  --amber: #ffc857;
-  --green: #6dffa8;
-  --pink: #ff7ad9;
-  --display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
-  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
-  --ease: cubic-bezier(.2, .8, .2, 1);
+  --background: #08142A;          /* layer 1 */
+  --surface: #0F1F38;             /* layer 2: card, panel */
+  --popover: #15294A;             /* layer 3: raised, popover */
+  --zone: #12345A;                /* a calm band */
+  --muted-hover: #1F3D66;
+  --code-ground: #0D2240;
+  --code-foreground: #EAF1F8;
+  --foreground: #C7D4E2;
+  --heading: #EAF1F8;
+  --muted-foreground: #9FB3C8;
+  --border: rgb(255 255 255 / 12%);
+  --border-strong: rgb(255 255 255 / 18%);
+  --border-input: rgb(255 255 255 / 30%);
+  --gold: #D4A64A;
+  --lime: #DEFEB3;                /* scarce: at most two elements per view */
+  --on-lime: #1C2B3A;
+  --read: #A3D2FF;                /* link / reads */
+  --act: #E4C57E;                 /* warning-text / actions */
+  --done: #7FC79A;                /* success / done */
+  --info-text: #8FBCE4;
+  --info-tint: rgb(59 130 196 / 15%);
+  --warning-tint: rgb(212 166 74 / 15%);
+  --top-light: inset 0 1px 0 rgb(255 255 255 / 6%);
+  --shadow-card: 0 1px 2px rgb(9 26 51 / 40%), 0 8px 20px -8px rgb(9 26 51 / 60%);
+  --shadow-float: 0 2px 4px rgb(9 26 51 / 50%), 0 16px 24px -8px rgb(9 26 51 / 60%), 0 40px 64px -24px rgb(9 26 51 / 70%);
+  --body: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+  --ui: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'Space Mono', ui-monospace, Menlo, monospace;
+  --ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --t-in: 250ms;
+  --t-enter: 400ms;
+  /* type steps for a 900 px high screen; a taller screen takes the next step */
+  --fs-title: 32px; --fs-lead: 16px; --fs-note: 14px; --fs-hero: 48px; --fs-num: 48px;
+}
+@media (min-height: 1000px) {
+  :root { --fs-lead: 18px; --fs-note: 16px; --fs-hero: 56px; --fs-num: 64px; }
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body {
-  background: var(--ink);
-  color: var(--text);
-  font-family: var(--display);
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--body);
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
-}
-body::before {
-  content: '';
-  position: fixed; inset: 0;
-  background:
-    radial-gradient(1100px 700px at 28% 55%, rgba(38, 64, 120, .28), transparent 70%),
-    radial-gradient(700px 500px at 90% 10%, rgba(198, 255, 61, .05), transparent 70%);
-  pointer-events: none;
 }
 .app {
   position: relative;
   height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
-  padding: 18px 28px 12px;
-  gap: 14px;
+  padding: 16px 32px 12px;
+  gap: 16px;
 }
+.eyebrow { font: 400 12px/1.3 var(--mono); letter-spacing: 2px; text-transform: uppercase; color: var(--gold); }
 
-/* ---------- top: title and the rail ---------- */
-header { display: flex; align-items: center; gap: 36px; }
-.brand { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
-.brand svg { flex: none; }
-.brand h1 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
-.brand h1 span { color: var(--muted); font-weight: 400; }
-.rail { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); position: relative; }
-.rail::before {
-  content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 1px; background: var(--line-2);
-}
-.rail .fill {
-  position: absolute; left: 0; top: 7px; height: 1px; background: var(--lime);
-  box-shadow: 0 0 8px var(--lime); transition: width .6s var(--ease);
-}
+/* ---------- top: the mark, the title and the rail ---------- */
+header { display: flex; align-items: center; gap: 32px; min-height: 48px; }
+.brand { display: flex; align-items: center; gap: 16px; white-space: nowrap; }
+.mark { display: inline-flex; align-items: center; gap: 8px; font: 700 16px/1 var(--body); color: var(--heading); }
+.mark i { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+.brand h1 { font: 600 14px/1.3 var(--body); letter-spacing: .15px; color: var(--foreground); padding-left: 16px; border-left: 1px solid var(--border-strong); }
+.rail { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); position: relative; transition: opacity var(--t-in) var(--ease); }
+.rail::before { content: ''; position: absolute; left: 0; right: 0; top: 6px; height: 1px; background: var(--border-strong); }
+.rail .fill { position: absolute; left: 0; top: 6px; height: 1px; background: var(--border-input); transition: width var(--t-enter) var(--ease); }
 .rail button {
-  position: relative; background: none; border: 0; color: var(--faint); cursor: pointer;
-  font: 500 12.5px/1.2 var(--display); text-align: left; padding: 22px 8px 0 0;
-  transition: color .3s;
+  position: relative; background: none; border: 0; color: var(--muted-foreground); cursor: pointer;
+  font: 600 12px/1.3 var(--ui); text-align: left; padding: 24px 8px 0 0;
+  transition: color var(--t-in) var(--ease);
 }
 .rail button::before {
-  content: ''; position: absolute; left: 0; top: 2px; width: 11px; height: 11px; border-radius: 50%;
-  background: var(--ink); border: 1.5px solid var(--line-2); transition: all .35s var(--ease);
+  content: ''; position: absolute; left: 0; top: 0; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--background); border: 1px solid var(--border-input); transition: all var(--t-in) var(--ease);
 }
-.rail button b { font-family: var(--mono); font-weight: 500; margin-right: 6px; color: inherit; }
-.rail button:hover { color: var(--text); }
-.rail button.past { color: var(--muted); }
-.rail button.past::before { border-color: var(--lime); background: var(--lime); }
-.rail button.on { color: var(--text); }
-.rail button.on::before { border-color: var(--lime); background: var(--ink); box-shadow: 0 0 0 4px rgba(198,255,61,.16), 0 0 14px var(--lime); }
-.rail button:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; border-radius: 4px; }
+.rail button b { font: 400 12px var(--mono); color: var(--gold); margin-right: 6px; }
+.rail button:hover { color: var(--heading); }
+.rail button.past::before { background: var(--muted-foreground); border-color: var(--muted-foreground); }
+.rail button.on { color: var(--heading); }
+.rail button.on::before { background: var(--heading); border-color: var(--heading); box-shadow: 0 0 0 4px rgb(255 255 255 / 12%); }
+:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.rail button:focus-visible { border-radius: 8px; }
 
 /* ---------- the two halves ---------- */
-main { min-height: 0; display: grid; grid-template-columns: 57fr 43fr; gap: 26px; }
+main { min-height: 0; display: grid; grid-template-columns: 57fr 43fr; gap: 32px; }
 .stage { position: relative; min-height: 0; }
-.panel { position: relative; min-height: 0; display: flex; flex-direction: column; }
-footer { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--faint); }
-footer kbd { font-family: var(--mono); font-size: 11.5px; color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; }
-.clock { font-family: var(--mono); font-size: 12px; color: var(--faint); }
-.clock i { font-style: normal; color: var(--lime); }
+.panel { position: relative; min-height: 0; display: flex; flex-direction: column; transition: opacity var(--t-enter) var(--ease); }
+footer { display: flex; justify-content: space-between; align-items: center; font: 400 12px var(--body); color: var(--muted-foreground); }
+footer kbd { font: 600 12px/20px var(--ui); color: var(--heading); background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; display: inline-block; }
+.clock { font: 400 12px var(--mono); color: var(--muted-foreground); }
+.clock i { font-style: normal; color: var(--heading); }
 
-/* intro: the orbit takes the whole width */
+/* intro and live: the orbit takes the whole width */
 body.intro main { grid-template-columns: 1fr 0fr; gap: 0; }
 body.intro .panel { opacity: 0; pointer-events: none; }
 
 /* ---------- windows ---------- */
 .view { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.view.enter { animation: viewIn .7s var(--ease) both; }
-@keyframes viewIn { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: none; } }
+.view.enter { animation: viewIn var(--t-enter) var(--ease) both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(8px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
 .win {
   flex: 1; min-height: 0; display: flex; flex-direction: column;
-  background: #070b16; border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
-  box-shadow: 0 40px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset, 0 0 120px -60px rgba(94,224,255,.25);
+  background: var(--code-ground); border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+  box-shadow: var(--top-light), var(--shadow-card);
 }
 .bar {
-  flex: none; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 14px;
-  background: linear-gradient(#111a2e, #0d1426); border-bottom: 1px solid var(--line);
-  font: 500 12px var(--mono); color: var(--muted);
+  flex: none; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px;
+  background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--top-light);
+  font: 600 12px var(--ui); color: var(--muted-foreground);
 }
-.bar .dots { display: flex; gap: 7px; margin-right: 10px; }
-.bar .dots i { width: 11px; height: 11px; border-radius: 50%; background: #2a3550; }
-.bar .dots i:nth-child(1) { background: #ff5f57; } .bar .dots i:nth-child(2) { background: #febc2e; } .bar .dots i:nth-child(3) { background: #28c840; }
-.bar .grow { flex: 1; text-align: center; margin-right: 70px; }
+.bar .dots { display: flex; gap: 6px; margin-right: 12px; }
+.bar .dots i { width: 12px; height: 12px; border-radius: 50%; background: var(--border-strong); }
+.bar .grow { flex: 1; text-align: center; margin-right: 64px; }
 .body { flex: 1; min-height: 0; display: grid; grid-template-columns: 33fr 67fr; }
 
 /* the chat column, CLI style */
 .chat {
   min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
-  padding: 14px 16px 10px; gap: 12px; border-right: 1px solid var(--line);
-  font: 400 12.5px/1.5 var(--mono); color: #c6cfdf;
+  padding: 16px 16px 12px; gap: 12px; border-right: 1px solid var(--border);
+  font: 400 12px/1.5 var(--mono); color: var(--code-foreground);
 }
-.chat .head { margin-bottom: auto; color: var(--muted); font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; }
-.chat .head b { color: #d97757; font-weight: 500; }
-.msg { animation: msgIn .5s var(--ease) both; }
+.chat .head { margin-bottom: auto; color: var(--muted-foreground); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; }
+.chat .head b { color: var(--heading); font-weight: 400; }
+.msg { animation: msgIn var(--t-enter) var(--ease) both; }
 @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.msg.user { color: var(--text); background: #111a2e; border-radius: 6px; padding: 6px 8px; }
-.msg.user::before { content: '> '; color: var(--muted); }
-.msg .mark { color: var(--text); }
-.msg.agent .mark.run { color: var(--amber); animation: blink 1s steps(2) infinite; }
-.msg.agent .mark.done { color: var(--green); }
-.msg.agent .sub { color: var(--faint); padding-left: 2ch; }
-.msg.plugin { border: 1px solid rgba(198,255,61,.45); border-radius: 8px; padding: 8px 10px; background: rgba(198,255,61,.05); box-shadow: 0 0 30px -10px rgba(198,255,61,.35); white-space: pre-wrap; font-size: 11.5px; }
-.msg.plugin .who { color: var(--lime); display: block; margin-bottom: 4px; font-weight: 500; }
+.msg.user { color: var(--heading); background: var(--surface); border-radius: 8px; padding: 6px 8px; }
+.msg.user::before { content: '> '; color: var(--muted-foreground); }
+.msg .mark { color: var(--heading); }
+.msg.agent .mark.run { color: var(--act); animation: blink 1s steps(2) infinite; }
+.msg.agent .mark.done { color: var(--done); }
+.msg.agent .sub { color: var(--muted-foreground); padding-left: 2ch; }
+.msg.plugin { border: 1px solid var(--border-strong); border-radius: 12px; padding: 8px 12px; background: var(--info-tint); white-space: pre-wrap; }
+.msg.plugin .who { color: var(--info-text); display: block; margin-bottom: 4px; }
 .msg.claude { white-space: pre-wrap; }
-.msg.claude .mark { color: var(--text); }
-.prompt { flex: none; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 6px 2px; color: var(--faint); }
+.prompt { flex: none; border-top: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-strong); padding: 6px 4px; color: var(--muted-foreground); }
 .prompt::before { content: '> '; }
-.prompt i { display: inline-block; width: .6em; height: 1.1em; vertical-align: -2px; background: var(--muted); animation: blink 1.1s steps(2) infinite; }
+.prompt i { display: inline-block; width: .6em; height: 1.1em; vertical-align: -2px; background: var(--muted-foreground); animation: blink 1.1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
 /* the docked pane */
-.pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 10px 12px 12px; }
-.pane-title { flex: none; display: flex; justify-content: space-between; font: 500 11.5px var(--mono); color: var(--muted); padding: 0 2px 6px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
-.pane-title b { color: var(--lime); font-weight: 500; }
+.pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 12px; transition: opacity var(--t-enter) var(--ease), transform var(--t-enter) var(--ease); }
+.pane-title { flex: none; display: flex; justify-content: space-between; font: 600 12px var(--ui); color: var(--muted-foreground); padding: 0 4px 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.pane-title b { color: var(--heading); font-weight: 600; }
 .pane-body { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; }
 .pane.closed { opacity: 0; transform: translateX(24px); }
-.pane { transition: opacity .6s var(--ease), transform .6s var(--ease); }
-.hello { font: 500 26px var(--mono); color: var(--text); }
-.hello::after { content: ''; display: inline-block; width: .55em; height: 1em; margin-left: 6px; vertical-align: -3px; background: var(--lime); animation: blink 1.1s steps(2) infinite; }
+.hello { font: 400 24px var(--mono); color: var(--code-foreground); }
+.hello::after { content: ''; display: inline-block; width: .55em; height: 1em; margin-left: 6px; vertical-align: -3px; background: var(--code-foreground); animation: blink 1.1s steps(2) infinite; }
 .cells { position: absolute; }
-.cells.bloom { filter: blur(5px) saturate(1.4); opacity: .55; mix-blend-mode: screen; }
+.cells.bloom { filter: blur(4px); opacity: .45; mix-blend-mode: screen; }
 
 /* step 2: the text rows */
-.rows { width: 100%; align-self: flex-start; font: 400 13.5px/1.55 var(--mono); }
-.rows .note { color: var(--faint); margin-bottom: 12px; }
-.rows .row { display: grid; grid-template-columns: 5ch 12ch 7ch 8ch 8ch; gap: 0 1ch; padding: 5px 8px; border-radius: 6px; transition: background .6s; }
-.rows .row.flash { background: rgba(94,224,255,.12); transition: none; }
-.rows .row .last { grid-column: 2 / -1; color: var(--muted); font-size: 12.5px; }
-.rows .runs { color: var(--amber); } .rows .done { color: var(--green); }
-.rows .n { color: var(--cyan); } .rows .a { color: var(--amber); }
-.rows .ev { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--line-2); color: var(--faint); font-size: 12px; }
+.rows { width: 100%; align-self: flex-start; font: 400 14px/1.5 var(--mono); color: var(--code-foreground); }
+.rows .note { color: var(--muted-foreground); margin-bottom: 12px; font-style: italic; }
+.rows .row { display: grid; grid-template-columns: 5ch 12ch 7ch 8ch 8ch; gap: 0 1ch; padding: 4px 8px; border-radius: 8px; transition: background var(--t-in) var(--ease); }
+.rows .row.flash { background: var(--info-tint); transition: none; }
+.rows .row .last { grid-column: 2 / -1; color: var(--muted-foreground); font-size: 12px; }
+.rows .runs { color: var(--act); } .rows .done { color: var(--done); }
+.rows .n { color: var(--read); } .rows .a { color: var(--act); }
 
 /* desktop app */
-.desk .bar { background: linear-gradient(#141c2f, #10182a); }
-.desk .body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 24%); }
+.desk .body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 24%); background: var(--background); }
 .desk .pane { order: 1; }
-.desk .chat { order: 2; border-right: 0; border-top: 1px solid var(--line); flex-direction: row; align-items: flex-end; gap: 16px; padding: 10px 16px 12px; }
+.desk .chat { order: 2; border-right: 0; border-top: 1px solid var(--border); flex-direction: row; align-items: flex-end; gap: 16px; padding: 12px 16px; background: var(--surface); font: 400 14px/1.5 var(--body); color: var(--foreground); }
 .desk .chat .head { display: none; }
 .desk .chat .msgs { flex: 1; min-width: 0; max-height: 100%; overflow: hidden; justify-content: flex-end; }
-.desk .prompt { flex: none; width: 26%; }
-.desk .chat { font-family: var(--display); font-size: 13px; line-height: 1.45; background: #0a1020; }
-.desk .chat .head { font-family: var(--display); }
-.desk .msg.user { background: #1a2440; border-radius: 12px 12px 4px 12px; padding: 8px 11px; margin-left: 14%; }
+.desk .msg.user { background: var(--popover); color: var(--heading); border-radius: 12px; padding: 8px 12px; margin-left: 16%; }
 .desk .msg.user::before { content: none; }
-.desk .msg.plugin { font-family: var(--mono); font-size: 11px; }
-.desk .prompt { border: 1px solid var(--line-2); border-radius: 12px; padding: 9px 12px; font-family: var(--display); }
+.desk .msg.plugin { font: 400 12px/1.5 var(--mono); color: var(--code-foreground); }
+.desk .prompt { flex: none; width: 26%; height: 44px; display: flex; align-items: center; border: 1px solid var(--border-input); border-radius: 12px; padding: 0 16px; font: 400 14px var(--body); }
 .desk .prompt::before { content: 'Reply to Claude…'; }
 .desk .prompt i { display: none; }
 .svgwrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
-.svgwrap svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 30px 60px rgba(0,0,0,.6)); }
+.svgwrap svg { width: 100%; height: 100%; display: block; }
 
 /* intro */
 .introv { position: absolute; inset: 0; }
 .introv .svgwrap { inset: 0 0 0 33%; }
 .introv .promise { position: absolute; left: 0; bottom: 8%; max-width: 31%; z-index: 2; }
-.introv .kicker { font: 500 13px var(--mono); color: var(--lime); margin-bottom: 18px; display: flex; gap: 10px; align-items: center; }
-.introv .kicker::before { content: ''; width: 28px; height: 1px; background: var(--lime); }
-.introv h2 { font-size: clamp(30px, 3.5vw, 60px); line-height: 1.02; letter-spacing: -.03em; font-weight: 700; }
-.introv p { margin-top: 20px; font-size: 18px; line-height: 1.5; color: var(--muted); max-width: 30ch; }
-.introv .go { margin-top: 28px; display: inline-flex; gap: 10px; align-items: center; font: 500 14px var(--display); color: var(--ink); background: var(--lime); border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer; box-shadow: 0 0 40px -6px rgba(198,255,61,.6); }
-.introv .go:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+.introv .eyebrow { margin-bottom: 16px; }
+.introv h2 { font: 700 var(--fs-hero)/1.08 var(--body); letter-spacing: -.8px; color: var(--heading); }
+.introv p { margin-top: 24px; font: 600 18px/1.5 var(--body); color: var(--muted-foreground); max-width: 32ch; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; padding: 0 24px; border-radius: 100px; cursor: pointer;
+  font: 600 16px/1 var(--ui); border: 1px solid var(--border); background: var(--surface); color: var(--heading); box-shadow: var(--top-light);
+  transition: background var(--t-in) var(--ease), transform var(--t-in) var(--ease), border-color var(--t-in) var(--ease);
+}
+.btn:hover { background: var(--muted-hover); }
+.btn:active { transform: scale(.97); }
+.btn.primary { background: var(--lime); border-color: var(--lime); color: var(--on-lime); box-shadow: none; }
+.btn.primary:hover { background: var(--lime); }
+.btn.sm { height: 44px; padding: 0 16px; font-size: 14px; }
+.btn:disabled { opacity: .5; cursor: default; }
+.introv .btn { margin-top: 32px; }
 
 /* ---------- the panel ---------- */
 .pin { display: flex; flex-direction: column; min-height: 0; flex: 1; }
-.pin.enter > * { animation: panelIn .6s var(--ease) both; }
-.pin.enter > *:nth-child(2) { animation-delay: .05s; } .pin.enter > *:nth-child(3) { animation-delay: .1s; }
-.pin.enter > *:nth-child(4) { animation-delay: .15s; } .pin.enter > *:nth-child(5) { animation-delay: .2s; }
-@keyframes panelIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
-.phead { display: flex; align-items: flex-end; gap: 18px; }
-.phead .num { font: 800 clamp(50px, 7.6vh, 96px)/.8 var(--display); color: var(--lime); letter-spacing: -.05em; text-shadow: 0 0 40px rgba(198,255,61,.35); }
-.phead .of { font: 500 12.5px var(--mono); color: var(--faint); margin-bottom: 6px; }
-.phead h2 { font-size: clamp(28px, 3.9vh, 40px); line-height: 1; font-weight: 700; letter-spacing: -.025em; }
-.adds { margin-top: 12px; font-size: clamp(14px, 1.8vh, 17px); line-height: 1.45; color: #c3cde0; max-width: 56ch; }
-.code {
-  margin-top: 16px; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px;
-  --fs: 14px;
-}
-.block { flex: none; min-width: 0; background: #080d1a; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
-.tab { display: flex; align-items: center; gap: 8px; padding: 4px 12px; background: #0d1427; border-bottom: 1px solid var(--line); font: 500 11.5px var(--mono); color: var(--muted); }
+.pin.enter > * { animation: panelIn var(--t-enter) var(--ease) both; }
+.pin.enter > *:nth-child(2) { animation-delay: 40ms; } .pin.enter > *:nth-child(3) { animation-delay: 80ms; }
+.pin.enter > *:nth-child(4) { animation-delay: 120ms; } .pin.enter > *:nth-child(5) { animation-delay: 160ms; }
+@keyframes panelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.phead { display: flex; align-items: flex-end; gap: 16px; }
+.phead .num { font: 400 var(--fs-num)/.85 var(--mono); color: var(--gold); letter-spacing: -.8px; }
+.phead .eyebrow { margin-bottom: 8px; }
+.phead h2 { font: 700 var(--fs-title)/1.15 var(--body); letter-spacing: -.4px; color: var(--heading); }
+.adds { margin-top: 12px; font: 400 var(--fs-lead)/1.5 var(--body); color: var(--foreground); max-width: 60ch; }
+.code { margin-top: 12px; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px; --fs: 14px; }
+.block { flex: none; min-width: 0; background: var(--code-ground); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.tab { display: flex; align-items: center; gap: 8px; padding: 4px 12px; background: var(--surface); border-bottom: 1px solid var(--border); font: 600 12px var(--ui); color: var(--muted-foreground); }
 .pair { flex: none; display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; align-items: start; }
-.tab::before { content: ''; width: 7px; height: 7px; border-radius: 2px; background: var(--line-2); }
-.tab.ts::before { background: #3e7bff; } .tab.json::before { background: var(--amber); }
-.tab em { font-style: normal; color: var(--faint); margin-left: auto; }
-pre { margin: 0; padding: 4px 0; font: 400 var(--fs)/1.5 var(--mono); font-variant-ligatures: none; color: #c9d3e6; tab-size: 2; }
-pre .ln { display: grid; grid-template-columns: 3.6ch 1.6ch minmax(0, 1fr); padding-right: 10px; border-left: 2px solid transparent; }
-pre .ln .no { text-align: right; color: #3a4766; padding-right: 1ch; user-select: none; }
-pre .ln .mk { color: var(--lime); font-weight: 700; font-size: .85em; }
+.tab::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--read); }
+.tab.json::before { background: var(--act); }
+.tab em { font-style: normal; color: var(--muted-foreground); margin-left: auto; }
+pre { margin: 0; padding: 4px 0; font: 400 var(--fs)/1.5 var(--mono); font-variant-ligatures: none; color: var(--code-foreground); tab-size: 2; }
+pre .ln { display: grid; grid-template-columns: 3.6ch 1.6ch minmax(0, 1fr); padding-right: 12px; border-left: 2px solid transparent; }
+pre .ln .no { text-align: right; color: rgb(255 255 255 / 30%); padding-right: 1ch; user-select: none; }
+pre .ln .mk { color: var(--gold); font-size: .85em; }
 pre .ln .src { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
 pre .ln.hl .src { white-space: pre-wrap; overflow-wrap: anywhere; }
-pre .ln.hl { background: linear-gradient(90deg, rgba(198,255,61,.13), rgba(198,255,61,.03)); border-left-color: var(--lime); }
-pre .ln.hl .no { color: var(--lime); }
-pre .gap { color: #34405c; padding-left: 4.5ch; font-size: .85em; line-height: 1.3; }
-.t-com { color: #5d6a88; font-style: italic; } .t-str { color: #a5e88a; } .t-kw { color: #c792ea; }
-.t-num { color: #ffb86b; } .t-fn { color: var(--cyan); } .t-dol { color: var(--lime); } .t-tag { color: #ff8fa3; } .t-key { color: #82aaff; }
-.notes { margin-top: 10px; list-style: none; display: grid; gap: 6px; }
-.notes li { display: grid; grid-template-columns: 22px 1fr; align-items: baseline; font-size: clamp(13.5px, 1.75vh, 16px); line-height: 1.4; color: #d3dbea; }
-.notes li b { font: 700 12px var(--mono); color: var(--ink); background: var(--lime); border-radius: 50%; width: 18px; height: 18px; display: inline-grid; place-items: center; }
-.see { margin-top: 12px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line-2); background: linear-gradient(90deg, rgba(94,224,255,.07), transparent); display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; font-size: clamp(14px, 1.85vh, 17px); line-height: 1.4; }
-.see span { font: 500 12px var(--mono); color: var(--cyan); white-space: nowrap; }
+pre .ln.hl { background: var(--info-tint); border-left-color: var(--read); }
+pre .ln.hl .no { color: var(--read); }
+pre .gap { color: rgb(255 255 255 / 30%); padding-left: 4.5ch; font-size: .85em; line-height: 1.3; }
+.t-com { color: var(--muted-foreground); font-style: italic; } .t-str { color: var(--done); } .t-kw { color: var(--read); }
+.t-num { color: var(--act); } .t-fn { color: var(--info-text); } .t-dol { color: var(--heading); text-decoration: underline dotted rgb(255 255 255 / 30%); text-underline-offset: 3px; }
+.t-tag { color: var(--info-text); } .t-key { color: var(--read); }
+.notes { margin-top: 12px; list-style: none; display: grid; gap: 6px; }
+.notes li { display: grid; grid-template-columns: 24px 1fr; align-items: baseline; font: 400 var(--fs-note)/1.5 var(--body); color: var(--foreground); }
+.notes li b { font: 400 12px/1 var(--mono); color: var(--gold); }
+.see { margin-top: 12px; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: var(--top-light); display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; font: 400 var(--fs-note)/1.5 var(--body); color: var(--heading); }
 
 /* ---------- live mode ---------- */
 .badge {
-  display: none; align-items: center; gap: 9px; flex: none; border: 1px solid rgba(198,255,61,.5); background: rgba(198,255,61,.08);
-  color: var(--lime); font: 600 12.5px var(--mono); padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  display: none; align-items: center; gap: 8px; flex: none; height: 32px; padding: 0 12px; border-radius: 100px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); box-shadow: var(--top-light);
+  color: var(--heading); font: 600 12px var(--ui);
 }
 .badge.show { display: inline-flex; }
-.badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 0 rgba(198,255,61,.7); animation: pulse 1.6s infinite; }
-.badge.idle { color: var(--muted); border-color: var(--line-2); background: none; }
-.badge.idle i { background: var(--muted); animation: none; }
-.badge:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(198,255,61,.7); } 70% { box-shadow: 0 0 0 10px rgba(198,255,61,0); } 100% { box-shadow: 0 0 0 0 rgba(198,255,61,0); } }
-body.live .rail { opacity: 0; pointer-events: none; }
+.badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--done); animation: pulse 1600ms var(--ease) infinite; }
+.badge.idle { color: var(--muted-foreground); }
+.badge.idle i { background: var(--muted-foreground); animation: none; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgb(127 199 154 / 60%); } 70% { box-shadow: 0 0 0 8px rgb(127 199 154 / 0%); } 100% { box-shadow: 0 0 0 0 rgb(127 199 154 / 0%); } }
+body.live .rail { display: none; }
+.livebox { margin-left: auto; }
 .livebox { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .liverow { display: flex; align-items: center; gap: 8px; }
 .chips { display: none; gap: 6px; }
 body.live .chips { display: flex; }
 .sess {
-  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 999px; cursor: pointer;
-  border: 1px solid var(--line-2); background: var(--raise); color: var(--text); font: 500 12.5px var(--display);
-  transition: opacity .3s, background .3s, border-color .3s;
+  display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px; border-radius: 100px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface); color: var(--muted-foreground); font: 600 12px var(--ui);
+  transition: opacity var(--t-in) var(--ease), background var(--t-in) var(--ease), border-color var(--t-in) var(--ease), color var(--t-in) var(--ease);
 }
-.sess svg { flex: none; color: var(--muted); }
-.sess .n { font: 600 11.5px var(--mono); color: var(--amber); }
-.sess .n.zero { color: var(--faint); }
-.sess.on { background: var(--lime); border-color: var(--lime); color: var(--ink); }
-.sess.on svg, .sess.on .n { color: var(--ink); }
+.sess svg { flex: none; }
+.sess .n { font: 400 12px var(--mono); color: var(--act); }
+.sess .n.zero { color: var(--muted-foreground); }
+.sess.on { background: var(--muted-hover); border-color: var(--border-input); color: var(--heading); }
 .sess.stale { opacity: .45; }
-.sess:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
-.same { display: none; font-size: 12px; color: var(--muted); }
+.same { display: none; font: 400 12px var(--body); color: var(--muted-foreground); }
 body.live .same { display: block; }
-.ctl {
-  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 3;
-  display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 14px;
-  background: rgba(10, 16, 32, .88); border: 1px solid var(--line-2); backdrop-filter: blur(10px);
-  box-shadow: 0 20px 40px -20px rgba(0,0,0,.8); width: min(860px, calc(100% - 32px));
+.ctl input {
+  flex: 1; min-width: 0; height: 44px; padding: 0 16px; border-radius: 100px;
+  background: var(--background); border: 1px solid var(--border-input); color: var(--heading); font: 400 14px var(--body);
 }
-.ctl button, .ctl input { font: 500 13.5px var(--display); border-radius: 9px; height: 36px; }
-.ctl button { flex: none; padding: 0 14px; cursor: pointer; border: 1px solid var(--line-2); background: var(--raise); color: var(--text); }
-.ctl button:hover { border-color: var(--muted); }
-.ctl button.primary { background: var(--lime); border-color: var(--lime); color: var(--ink); font-weight: 600; }
-.ctl button:disabled { opacity: .5; cursor: default; }
-.ctl input { flex: 1; min-width: 0; padding: 0 12px; background: #070b16; border: 1px solid var(--line-2); color: var(--text); }
-.ctl input::placeholder { color: var(--faint); }
-.ctl :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
-.livev .win { height: calc(100% - 66px); }
-.livev .svgwrap { inset: 0 0 66px 0; }
+.ctl input::placeholder { color: var(--muted-foreground); }
+.livev { display: grid; grid-template-columns: 61fr 39fr; gap: 24px; }
+.lorbit { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.lorbit .win .pane { flex: 1; }
+.lchat {
+  min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  background: var(--background); border: 1px solid var(--border); border-radius: 20px; overflow: hidden;
+}
+.lhead { flex: none; display: flex; align-items: center; gap: 8px; height: 48px; padding: 0 16px; background: var(--surface); border-bottom: 1px solid var(--border); box-shadow: var(--top-light); }
+.lhead svg { color: var(--muted-foreground); }
+.ltitle { font: 700 16px/1.3 var(--body); color: var(--heading); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lmsgs { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: flex; flex-direction: column; gap: 12px; padding: 16px; scrollbar-width: thin; scrollbar-color: var(--border-strong) transparent; }
+.lmsgs > :first-child { margin-top: auto; }
+.lempty { color: var(--muted-foreground); font: 400 14px/1.5 var(--body); text-align: center; padding: 24px; }
+.bub { max-width: 88%; padding: 12px 16px; border-radius: 20px; font: 400 var(--fs-note)/1.5 var(--body); white-space: pre-wrap; overflow-wrap: anywhere; }
+.bub.enter { animation: bubIn var(--t-enter) var(--ease) both; }
+@keyframes bubIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.bub.you { align-self: flex-end; background: var(--popover); color: var(--heading); border-bottom-right-radius: 8px; }
+.bub.plugin { align-self: flex-end; background: transparent; color: var(--heading); border: 1px solid var(--border-strong); border-bottom-right-radius: 8px; }
+.bub.pending { color: var(--muted-foreground); border-style: dashed; }
+.bub.claude { align-self: flex-start; background: var(--surface); color: var(--foreground); border: 1px solid var(--border); box-shadow: var(--top-light); border-bottom-left-radius: 8px; max-width: 94%; }
+.bub .tag, .bub .who { display: block; margin-bottom: 4px; font: 600 12px/1.3 var(--ui); color: var(--muted-foreground); }
+.bub .who { color: var(--heading); }
+.ctl { flex: none; display: grid; gap: 8px; padding: 12px; background: var(--surface); border-top: 1px solid var(--border); box-shadow: var(--top-light); }
+.ctl-row { display: flex; gap: 8px; }
+.ctl-row .btn { flex: none; }
 .toast {
-  position: fixed; left: 50%; bottom: 124px; transform: translate(-50%, 12px); opacity: 0; z-index: 10;
-  background: var(--lime); color: var(--ink); font: 600 14px var(--display); padding: 10px 18px; border-radius: 999px;
-  box-shadow: 0 0 40px -6px rgba(198,255,61,.6); transition: opacity .3s, transform .3s var(--ease); pointer-events: none;
+  position: fixed; left: 50%; bottom: 112px; transform: translate(-50%, 8px); opacity: 0; z-index: 10;
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 100px;
+  background: var(--popover); border: 1px solid var(--border); box-shadow: var(--top-light), var(--shadow-float);
+  color: var(--heading); font: 600 14px var(--ui);
+  transition: opacity var(--t-enter) var(--ease), transform var(--t-enter) var(--ease); pointer-events: none;
 }
-.toast.err { background: var(--amber); }
+.toast::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--done); }
+.toast.err { background: var(--warning-tint); color: var(--act); }
+.toast.err::before { background: var(--act); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
-.livev .win .pane { flex: 1; }
-.wait { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); font: 500 15px var(--mono); color: var(--muted); background: rgba(6,10,20,.75); border: 1px solid var(--line-2); border-radius: 999px; padding: 8px 16px; animation: blink 2.4s ease-in-out infinite; }
+.wait { position: absolute; left: 50%; top: 12%; transform: translateX(-50%); font: 600 14px var(--ui); color: var(--muted-foreground); background: var(--popover); border: 1px solid var(--border); border-radius: 100px; padding: 8px 16px; animation: breathe 1600ms cubic-bezier(0.37, 0, 0.63, 1) infinite alternate; }
+@keyframes breathe { to { opacity: .55; } }
 .wait[hidden] { display: none; }
-.hint { font: 400 12px var(--mono); color: var(--faint); }
-.hint b { color: var(--muted); font-weight: 500; }
+.hint { font: 400 12px var(--body); color: var(--muted-foreground); }
+.hint b { font: 400 12px var(--mono); color: var(--heading); }
 @media (prefers-reduced-motion: reduce) {
-  .view.enter, .pin.enter > *, .msg { animation: none; }
+  *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 </style>
 </head>
@@ -299,7 +322,7 @@ body.live .same { display: block; }
 <div class="app">
   <header>
     <div class="brand">
-      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><ellipse cx="13" cy="13" rx="11.5" ry="6.5" fill="none" stroke="#2a3b5f" stroke-dasharray="1.5 2.5"/><circle cx="13" cy="13" r="3.6" fill="#c6ff3d"/><circle cx="23.5" cy="10.5" r="2" fill="#5ee0ff"/></svg>
+      <span class="mark"><i aria-hidden="true"></i>Like A Human</span>
       <h1>Build a Claude Code mod: agent orbit</h1>
     </div>
     <nav class="rail" id="rail" aria-label="Steps"><div class="fill" id="fill"></div></nav>
@@ -320,20 +343,21 @@ body.live .same { display: block; }
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<script>window.SOURCES = {"plugin.json":"{\n  \"name\": \"agent-orbit\",\n  \"version\": \"0.1.0\",\n  \"description\": \"A live animated view in the terminal: the main session as a core, its agents in orbit, and the files they read flying in\",\n  \"types\": \"./types/index.d.ts\",\n  \"license\": \"MIT\",\n  \"author\": { \"name\": \"Like A Human\" }\n}\n","hooks.json":"{ \"modules\": [\"./register.tsx\"] }\n","register.tsx":"import { atom, read, update } from 'claude-code'\nimport type { EngineInterface, Register } from 'claude-code'\n\nimport { drawSvg } from './desktop'\nimport { drawFrame } from './frame'\nimport type { Agent, Step } from './live'\nimport { AMBER, CYAN, GREEN, LIME, MAIN, PALETTE, baseName, blankAgent, hash, newLive, say, shortModel, verbOf } from './live'\n\nconst PANE = 'agent-orbit'\nconst RASTER = 'orbit'\nconst READS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Skill', 'LS'])\n\n// A counter for the text view on surfaces without a Raster.\nconst version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)\n\n// The live model and the size of the mounted Raster. Both start over on a reload.\nconst live = newLive(Date.now())\nlet size: { columns: number; rows: number } | undefined\n// True once a desktop pane drew the SVG view, and when it last redrew.\nlet vectorShown = false\nlet lastRedraw = 0\n// Agents whose end the mod already reported to the chat.\nconst reported = new Set<string>()\n\nfunction whatOf(input: Record<string, unknown>, tool: string): string {\n  const value = ['file_path', 'pattern', 'url', 'query', 'skill', 'command', 'description']\n    .map(key => input[key])\n    .find(v => typeof v === 'string')\n  return String(value ?? tool)\n}\n\nfunction loopOf(id: string | undefined): Agent {\n  if (!id) return live.main\n  let agent = live.agents.find(a => a.id === id)\n  if (!agent) {\n    const slot = live.agents.length\n    agent = blankAgent(id, 'agent', Date.now(), slot, PALETTE[slot % PALETTE.length] ?? CYAN)\n    agent.name = `Agent ${slot + 1}`\n    live.agents.push(agent)\n  }\n  return agent\n}\n\n// Step 7: a live web page, like the build board. The mod posts its model to a small\n// bridge (bridge/serve.ts) about 3 times a second while agents run; the bridge streams\n// it to every open page, so the page and the pane draw the same model. The bridge\n// answers each post with the prompts the page queued, and the mod sends them to Claude.\nconst BRIDGE = 'http://127.0.0.1:4747'\nlet lastSent = 0\nlet bridgeDownUntil = 0\n// Who this chat is on the page: the page shows one chip per session, and a button\n// sends its prompt to the session that is selected there.\nconst session = { id: crypto.randomUUID(), label: 'Claude Code', surface: 'terminal' as string }\n\nfunction mirror($: EngineInterface, now: number): void {\n  const busy = live.agents.some(a => a.endedAt === undefined) || now - (live.events[live.events.length - 1]?.at ?? 0) < 3000\n  if (now < bridgeDownUntil || now - lastSent < (busy ? 300 : 3000)) return\n  lastSent = now\n  void $.http\n    .fetch(`${BRIDGE}/state`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...live, sentAt: now, session }) })\n    .then(async r => {\n      if (!r.ok) {\n        bridgeDownUntil = now + 5000\n        return\n      }\n      // A prompt from the page goes into the chat as if the person typed it.\n      const { prompts } = JSON.parse(r.text) as { prompts?: string[] }\n      for (const text of prompts ?? []) {\n        say(live, 'The web page sends a prompt to the chat', LIME, Date.now())\n        $.ui.toast('The orbit page sent a prompt to Claude')\n        await $.prompt.submit({ text, asUser: true })\n      }\n    })\n    .catch(() => {\n      bridgeDownUntil = now + 5000\n    })\n}\n\n// Starts the bridge when it does not answer (detached, so it outlives the turn), like /board.\nasync function ensureBridge($: EngineInterface): Promise<boolean> {\n  const up = async () => (await $.http.fetch(`${BRIDGE}/health`).catch(() => ({ ok: false }))).ok\n  if (await up()) return true\n  // The mod sits in <repo>/mods/agent-orbit; the bridge in <repo>/bridge.\n  const start = `cd \"${$.plugin.root}\" && { [ -d .claude-plugin ] || cd ..; } && cd ../.. && nohup bun bridge/serve.ts > /tmp/agent-orbit-bridge.log 2>&1 &`\n  await $.process.run(['sh', '-c', start])\n  for (let i = 0; i < 20; i++) {\n    await $.clock.sleep(500)\n    if (await up()) {\n      bridgeDownUntil = 0\n      return true\n    }\n  }\n  return false\n}\n\nexport const register: Register = on => {\n  on('session.start', async ($, e, next) => {\n    session.surface = e.surface ?? 'terminal'\n    session.label = `${session.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${e.cwd.split('/').pop() ?? ''}`\n    await $.command.register({ name: 'orbit', description: 'Open the live agent orbit; /orbit web opens the live web page' })\n    void $.ui.open({ id: PANE, title: 'Agent orbit' })\n\n    // The animation: about 16 frames a second, painted into the mounted Raster.\n    $.clock.every(60, () => {\n      const now = Date.now()\n      if (size) {\n        const cells = drawFrame(live, size.columns, size.rows, now)\n        void $.ui.blit({ requestId: PANE, key: RASTER, cells, ...size }).catch(() => {})\n      }\n      mirror($, now)\n      // The desktop SVG animates by itself; it only needs a redraw every 2 s while agents run.\n      const busy = live.agents.some(a => a.endedAt === undefined)\n      if (vectorShown && busy && now - lastRedraw > 2000) {\n        lastRedraw = now\n        void update($, version, v => v + 1).catch(() => {})\n      }\n    })\n\n    return next(e)\n  })\n\n  on('command.run', { command: 'orbit' }, async ($, e) => {\n    // `/orbit web` starts the bridge and opens the live page, like `/board`.\n    if (e.args.trim() === 'web') {\n      if (!(await ensureBridge($))) return { text: 'The bridge did not start. See /tmp/agent-orbit-bridge.log (it needs bun).' }\n      await $.process.run(['open', BRIDGE])\n      return { text: `The live orbit page is open: ${BRIDGE}` }\n    }\n    await $.ui.open({ id: PANE, title: 'Agent orbit' })\n    return { text: 'Agent orbit opened. Type /orbit web for the live web page.' }\n  })\n\n  // A prompt the person enters counts as their ask: the pane opens at any width.\n  on('prompt.submit', async ($, e, next) => {\n    void $.ui.open({ id: PANE, title: 'Agent orbit' }).catch(() => {})\n    if (e.origin.kind !== 'plugin') say(live, 'You give Main a task', LIME, Date.now())\n    await update($, version, v => v + 1).catch(() => {})\n    return next(e)\n  })\n\n  // The context the session carries before its first word: its instruction files.\n  on('prompt.context', async ($, e, next) => {\n    live.files = (e.instructionFiles ?? []).map(file => `${file.kind}: ${baseName(file.path)}`)\n    if (live.files.length > 0) say(live, `Main loads ${live.files.length} instruction files (CLAUDE.md)`, CYAN, Date.now())\n    await update($, version, v => v + 1).catch(() => {})\n    return next(e)\n  })\n\n  on('skill.prompt', async ($, e, next) => {\n    if (!live.skills.includes(e.skill)) live.skills.push(e.skill)\n    say(live, `A skill loads: ${e.skill}`, CYAN, Date.now())\n    return next(e)\n  })\n\n  // A new agent: it takes a slot in the orbit, and a star flies out to it.\n  on('agent.spawn', async ($, e, next) => {\n    const started = await next(e)\n    if (started.deny === undefined && started.agentId) {\n      const agent = loopOf(started.agentId)\n      const same = live.agents.filter(a => a.type === e.subagentType).length + 1\n      agent.type = e.subagentType\n      agent.name = `${e.subagentType} ${same}`\n      agent.task = e.description\n      agent.model = shortModel(started.model)\n      agent.startedAt = Date.now()\n      live.particles.push({ kind: 'spawn', agentId: agent.id, label: '', seed: 0, at: Date.now() })\n      say(live, `Main hands ${agent.name} a task: \"${e.description}\" (${agent.model})`, LIME, Date.now())\n      await update($, version, v => v + 1).catch(() => {})\n    }\n    return started\n  })\n\n  // Every tool call: a read flies in from outside, an action reports back to the core.\n  on('tool.call', async ($, e, next) => {\n    const agent = loopOf(e.agentId)\n    const what = whatOf(e as unknown as Record<string, unknown>, e.tool)\n    const step: Step = { tool: e.tool, what: verbOf(e.tool, what), isRead: READS.has(e.tool), at: Date.now() }\n    agent.steps = [...agent.steps, step].slice(-30)\n    if (step.isRead) {\n      agent.reads++\n      const file = baseName(what)\n      agent.context = [...agent.context.filter(f => f !== file), file].slice(-4)\n    } else agent.acts++\n    say(live, `${agent.name} ${step.what}`, step.isRead ? CYAN : AMBER, Date.now())\n    if (agent.id !== MAIN) {\n      live.particles.push({\n        kind: step.isRead ? 'read' : 'act',\n        agentId: agent.id,\n        label: baseName(what),\n        seed: hash(what),\n        at: Date.now(),\n      })\n    }\n    await update($, version, v => v + 1).catch(() => {})\n    return next(e)\n  })\n\n  // An agent ends: it parks with a check mark.\n  on('turn.complete', async ($, e, next) => {\n    if (e.agentId) {\n      const agent = live.agents.find(a => a.id === e.agentId)\n      if (agent && agent.endedAt === undefined) {\n        agent.endedAt = Date.now()\n        const s = Math.round((agent.endedAt - agent.startedAt) / 1000)\n        say(live, `${agent.name} is done after ${s}s: read ${agent.reads}, did ${agent.acts}`, GREEN, Date.now())\n      }\n      await update($, version, v => v + 1).catch(() => {})\n\n      // The mod talks back: when the last running agent ends, it sends a prompt to the chat.\n      const wave = live.agents.filter(a => !reported.has(a.id))\n      if (wave.length > 0 && wave.every(a => a.endedAt !== undefined)) {\n        wave.forEach(a => reported.add(a.id))\n        const lines = wave.map(\n          a => `- ${a.name} (${a.model}), ${Math.round(((a.endedAt ?? 0) - a.startedAt) / 1000)}s, read ${a.reads}, did ${a.acts}: ${a.task}`,\n        )\n        say(live, 'The mod sends a debrief prompt to the chat', LIME, Date.now())\n        await update($, version, v => v + 1).catch(() => {})\n        void $.prompt\n          .submit({\n            text: [\n              `Agent orbit saw ${wave.length} agent(s) finish:`,\n              ...lines,\n              'Give a debrief in at most 4 lines: which agent read the most, and the one finding of each agent.',\n            ].join('\\n'),\n          })\n          .catch(() => {})\n      }\n    }\n    return next(e)\n  })\n\n  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {\n    // The terminal: one Raster, painted by the clock above.\n    if (e.surface === 'terminal') {\n      const { Raster } = $.ui.resolve(e)\n      const columns = Math.max(20, Math.min(160, e.props.bodyColumns))\n      const rows = Math.max(10, Math.min(48, e.props.scroll.bodyRows))\n      size = { columns, rows }\n      return <Raster key={RASTER} columns={columns} rows={rows} cells={drawFrame(live, columns, rows, Date.now())} />\n    }\n\n    // The desktop: one animated SVG with hover tooltips, drawn again on each change.\n    if (e.surface === 'desktop') {\n      const { Svg } = $.ui.resolve(e)\n      await read($, version)\n      vectorShown = true\n      lastRedraw = Date.now()\n      return <Svg source={drawSvg(live, Date.now())} alt=\"Agent orbit: the main session, its agents, and the files they read\" isInteractive={true} />\n    }\n\n    // Other surfaces: a plain text view of the same model.\n    const { Box, Text } = $.ui.resolve(e)\n    await read($, version)\n    return (\n      <Box flexDirection=\"column\">\n        <Text dimColor>The live orbit draws in the Claude CLI. Here is the list.</Text>\n        {[live.main, ...live.agents].map(agent => (\n          <Text>\n            {agent.endedAt ? 'done' : 'runs'} · {agent.name} {agent.model} · read {agent.reads} · did {agent.acts}\n          </Text>\n        ))}\n        {live.events.slice(-5).map(event => (\n          <Text dimColor>{event.text}</Text>\n        ))}\n      </Box>\n    )\n  })\n}\n","live.ts":"// The live model: what the animation draws. Plain module state, filled by the hooks.\n\nexport type Step = { tool: string; what: string; isRead: boolean; at: number }\n\nexport type Agent = {\n  id: string\n  type: string\n  name: string\n  task: string\n  model: string\n  startedAt: number\n  endedAt?: number\n  slot: number\n  color: number\n  steps: Step[]\n  reads: number\n  acts: number\n  /** The files this agent read: its context, shown as satellites around it. */\n  context: string[]\n}\n\nexport type Particle = {\n  kind: 'spawn' | 'read' | 'act'\n  agentId: string\n  label: string\n  seed: number\n  at: number\n}\n\n/** One thing that happened, in plain words, for the caption and the ticker. */\nexport type Event = { text: string; color: number; at: number }\n\nexport type Live = {\n  main: Agent\n  agents: Agent[]\n  particles: Particle[]\n  events: Event[]\n  files: string[]\n  skills: string[]\n}\n\nexport const MAIN = 'main'\nexport const LIME = 0xc6ff3d\nexport const CYAN = 0x5ee0ff\nexport const AMBER = 0xffc857\nexport const GREEN = 0x6dffa8\n\n// One colour per agent, in order of spawn.\nexport const PALETTE = [0x5ee0ff, 0xff7ad9, 0xffc857, 0x9d8cff, 0x6dffa8, 0xff8f5e, 0x7ab8ff]\n\nexport function newLive(now: number): Live {\n  return {\n    main: blankAgent(MAIN, 'main session', now, -1, LIME),\n    agents: [],\n    particles: [],\n    events: [],\n    files: [],\n    skills: [],\n  }\n}\n\nexport function blankAgent(id: string, type: string, now: number, slot: number, color: number): Agent {\n  return {\n    id,\n    type,\n    name: id === MAIN ? 'Main' : type,\n    task: '',\n    model: '',\n    startedAt: now,\n    slot,\n    color,\n    steps: [],\n    reads: 0,\n    acts: 0,\n    context: [],\n  }\n}\n\nexport function say(live: Live, text: string, color: number, at: number): void {\n  live.events = [...live.events, { text, color, at }].slice(-20)\n}\n\nexport function hash(text: string): number {\n  let h = 2166136261\n  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)\n  return h >>> 0\n}\n\nexport function shortModel(model: string): string {\n  const m = /(opus|sonnet|haiku|fable)/i.exec(model)\n  return m?.[1] ? m[1].toLowerCase() : model.slice(0, 8)\n}\n\nexport function baseName(text: string): string {\n  return text.split('/').pop()?.slice(0, 22) ?? text\n}\n\n/** A tool call in plain words: \"reads PROBLEMS.md\", \"searches for TODO\". */\nexport function verbOf(tool: string, what: string): string {\n  const name = baseName(what)\n  switch (tool) {\n    case 'Read':\n      return `reads ${name}`\n    case 'Grep':\n      return `searches for \"${what.slice(0, 24)}\"`\n    case 'Glob':\n      return `looks for files ${what.slice(0, 24)}`\n    case 'LS':\n      return `lists ${name}`\n    case 'WebFetch':\n    case 'WebSearch':\n      return `reads the web: ${what.slice(0, 28)}`\n    case 'Skill':\n      return `loads the skill ${what}`\n    case 'Edit':\n    case 'Write':\n      return `edits ${name}`\n    case 'Bash':\n      return `runs ${what.slice(0, 28)}`\n    case 'Agent':\n      return `starts an agent: ${what.slice(0, 28)}`\n    default:\n      return `uses ${tool}`\n  }\n}\n","frame.ts":"// Draws one frame of the orbit into Raster cells: [codePoint, fg, bg] per cell.\nimport type { Agent, Live } from './live'\nimport { AMBER, CYAN, GREEN, LIME, hash, shortModel } from './live'\n\nconst DEFAULT = 0x01000000\nconst SPIN = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'\nconst DIM = 0x4a5568\nconst FAINT = 0x2d3440\nconst TEXT = 0xd8dee9\nconst MUTED = 0x8899aa\n\nfunction scale(color: number, k: number): number {\n  const r = Math.min(255, Math.round(((color >> 16) & 255) * k))\n  const g = Math.min(255, Math.round(((color >> 8) & 255) * k))\n  const b = Math.min(255, Math.round((color & 255) * k))\n  return (r << 16) | (g << 8) | b\n}\n\n// Only width-1 characters: anything wide or outside the BMP becomes '?'.\nfunction safe(code: number): number {\n  if (code < 0x20 || code === 0x7f) return 0x20\n  if (code > 0xffff) return 0x3f\n  if (\n    (code >= 0x1100 && code <= 0x115f) ||\n    (code >= 0x2e80 && code <= 0xa4cf) ||\n    (code >= 0xac00 && code <= 0xd7a3) ||\n    (code >= 0xf900 && code <= 0xfaff) ||\n    (code >= 0xfe30 && code <= 0xfe4f) ||\n    (code >= 0xff00 && code <= 0xff60) ||\n    (code >= 0xffe0 && code <= 0xffe6) ||\n    (code >= 0xd800 && code <= 0xdfff)\n  )\n    return 0x3f\n  return code\n}\n\nfunction clock(ms: number): string {\n  const s = Math.max(0, Math.floor(ms / 1000))\n  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`\n}\n\nfunction fit(text: string, width: number): string {\n  if (width <= 0) return ''\n  return text.length > width ? `${text.slice(0, Math.max(0, width - 1))}…` : text.padEnd(width)\n}\n\nfunction ago(ms: number): string {\n  const s = Math.floor(ms / 1000)\n  return s < 1 ? 'now' : `${s}s`\n}\n\nexport function drawFrame(live: Live, columns: number, rows: number, now: number): string {\n  const W = Math.max(1, columns)\n  const H = Math.max(1, rows)\n  const narrow = W < 80\n  const cells = new Uint32Array(W * H * 3)\n  for (let i = 0; i < W * H; i++) {\n    cells[i * 3] = 0x20\n    cells[i * 3 + 1] = DEFAULT\n    cells[i * 3 + 2] = DEFAULT\n  }\n  const put = (x: number, y: number, ch: string, fg: number) => {\n    const cx = Math.round(x)\n    const cy = Math.round(y)\n    if (cx < 0 || cy < 0 || cx >= W || cy >= H) return\n    const i = (cy * W + cx) * 3\n    cells[i] = safe(ch.codePointAt(0) ?? 0x20)\n    cells[i + 1] = fg\n  }\n  const write = (x: number, y: number, text: string, fg: number) => {\n    let i = 0\n    for (const ch of text) put(x + i++, y, ch, fg)\n  }\n\n  // The layout, top to bottom: legend, sky, caption, ticker, list.\n  const loops = [live.main, ...live.agents]\n  const tall = H >= 28\n  const perLoop = narrow && tall ? 2 : 1\n  let listRows = Math.min(loops.length * perLoop, Math.max(2, Math.floor(H / 3)))\n  let ticker = H >= 34 ? 3 : H >= 26 ? 2 : 0\n  let skyH = H - 1 - 1 - ticker - 1 - listRows\n  if (skyH < 9) {\n    ticker = 0\n    skyH = H - 3 - listRows\n  }\n  if (skyH < 7) {\n    listRows = Math.max(1, H - 3 - 7)\n    skyH = H - 3 - listRows\n  }\n  const top = 1\n  const cx = W / 2\n  const cy = top + skyH / 2\n  const rx = Math.max(6, Math.min(W * 0.34, skyH * 1.5))\n  const ry = Math.max(2, skyH * 0.34)\n\n  // 1. The legend: what each mark means.\n  const legend: [string, number, string][] = [\n    ['◉', LIME, 'main session'],\n    ['●', 0xff7ad9, 'agent'],\n    ['◆', CYAN, 'reads a file'],\n    ['◆', AMBER, 'acts'],\n    ['★', LIME, 'task out'],\n    ['✔', GREEN, 'done'],\n  ]\n  let lx = 1\n  for (const [mark, color, label] of legend) {\n    const item = narrow ? label.split(' ')[0] ?? label : label\n    if (lx + 3 + item.length > W) break\n    put(lx, 0, mark, color)\n    write(lx + 2, 0, item, MUTED)\n    lx += item.length + 4\n  }\n\n  // 2. The sky: stars that twinkle.\n  for (let s = 0; s < Math.floor((W * skyH) / 50); s++) {\n    const h = hash(`star${s}`)\n    const glow = 0.5 + 0.5 * Math.sin(now / 900 + (h % 628) / 100)\n    put(h % W, top + ((h >>> 12) % skyH), glow > 0.85 ? '+' : '·', scale(0x8899aa, 0.2 + 0.4 * glow))\n  }\n\n  // The orbit itself.\n  for (let a = 0; a < 360; a += 5) {\n    const t = (a * Math.PI) / 180\n    put(cx + rx * Math.cos(t), cy + ry * Math.sin(t), '·', FAINT)\n  }\n\n  // Where each agent is now.\n  const n = Math.max(3, live.agents.length)\n  const where = (agent: Agent, at: number) => {\n    const until = agent.endedAt ?? at\n    const angle = (agent.slot * 2 * Math.PI) / n - Math.PI / 2 + ((until - agent.startedAt) / 1000) * 0.35\n    return { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) }\n  }\n\n  // Beams from the core to each running agent, with a dash that flows outward.\n  for (const agent of live.agents) {\n    if (agent.endedAt) continue\n    const p = where(agent, now)\n    const steps = Math.ceil(Math.max(Math.abs(p.x - cx), Math.abs(p.y - cy) * 2))\n    for (let k = 3; k < steps - 1; k++) {\n      const lit = (((k - Math.floor(now / 90)) % 5) + 5) % 5 === 0\n      put(cx + ((p.x - cx) * k) / steps, cy + ((p.y - cy) * k) / steps, lit ? '•' : '·', lit ? agent.color : scale(agent.color, 0.25))\n    }\n  }\n\n  // Particles: a task flies out, a file flies in, an action reports back.\n  live.particles = live.particles.filter(p => now - p.at < 1400)\n  for (const particle of live.particles) {\n    const agent = live.agents.find(a => a.id === particle.agentId)\n    if (!agent) continue\n    const t = Math.min(1, (now - particle.at) / 1100)\n    const ease = 1 - (1 - t) * (1 - t)\n    const target = where(agent, now)\n    if (particle.kind === 'read') {\n      const angle = ((particle.seed % 360) * Math.PI) / 180\n      const sx = cx + rx * 1.4 * Math.cos(angle)\n      const sy = Math.max(top, Math.min(top + skyH - 1, cy + ry * 1.4 * Math.sin(angle)))\n      const x = sx + (target.x - sx) * ease\n      const y = sy + (target.y - sy) * ease\n      put(x - (target.x - sx) * 0.07, y - (target.y - sy) * 0.07, '·', scale(CYAN, 0.5))\n      put(x, y, '◆', CYAN)\n      if (t < 0.55) {\n        const label = particle.label\n        write(Math.max(0, Math.min(W - label.length, x - label.length / 2)), Math.max(top, y - 1), label, scale(CYAN, 1 - t))\n      }\n    } else {\n      const from = particle.kind === 'spawn' ? { x: cx, y: cy } : target\n      const to = particle.kind === 'spawn' ? target : { x: cx, y: cy }\n      put(from.x + (to.x - from.x) * ease, from.y + (to.y - from.y) * ease, particle.kind === 'spawn' ? '★' : '◆', particle.kind === 'spawn' ? LIME : AMBER)\n    }\n  }\n\n  // The core: the main session, pulsing, with its own context under it.\n  const beat = 0.6 + 0.4 * Math.sin(now / 260)\n  for (let a = 0; a < 360; a += 30) {\n    const t = (a * Math.PI) / 180 + now / 1200\n    put(cx + 3.2 * Math.cos(t), cy + 1.4 * Math.sin(t), '·', scale(LIME, 0.3 + 0.4 * beat))\n  }\n  put(cx, cy, '◉', scale(LIME, 0.55 + 0.45 * beat))\n  write(cx - 2, cy + 2, 'MAIN', LIME)\n  const mainContext = live.files.length > 0 ? live.files : live.main.context\n  mainContext.slice(0, skyH >= 14 ? 2 : 0).forEach((file, i) => {\n    const label = `◇ ${file}`\n    if (cy + 3 + i < top + skyH) write(cx - Math.floor(label.length / 2), cy + 3 + i, label, scale(LIME, 0.5))\n  })\n\n  // 3. The agents: a trail, the name, and the files it read as satellites (its context).\n  for (const agent of live.agents) {\n    const done = agent.endedAt !== undefined\n    if (!done) {\n      for (let k = 4; k >= 1; k--) {\n        const p = where(agent, now - k * 160)\n        put(p.x, p.y, '·', scale(agent.color, 0.7 - k * 0.14))\n      }\n    }\n    const p = where(agent, now)\n    const blink = done ? 1 : 0.65 + 0.35 * Math.sin(now / 180 + agent.slot)\n    put(p.x, p.y, done ? '✔' : '●', done ? GREEN : scale(agent.color, blink))\n    const name = fit(agent.name, narrow ? 12 : 18).trimEnd()\n    // Labels go on the outer side, unless that side has no room for them.\n    const right = p.x >= cx ? p.x + 2 + name.length <= W : p.x - 1 - name.length < 0\n    const nx = right ? p.x + 2 : p.x - 1 - name.length\n    write(nx, p.y, name, done ? scale(GREEN, 0.8) : agent.color)\n    agent.context.slice(skyH >= 14 ? -3 : -1).forEach((file, i) => {\n      const y = p.y + 1 + i\n      if (y >= top + skyH) return\n      const label = fit(`◇ ${file}`, narrow ? 14 : 22).trimEnd()\n      const sx = right ? p.x + 2 : p.x - 1 - label.length\n      write(sx, y, label, scale(agent.color, done ? 0.4 : 0.6))\n    })\n  }\n\n  // 4. The caption: the newest event in plain words, typed out.\n  let y = top + skyH\n  const newest = live.events[live.events.length - 1]\n  if (newest) {\n    const shown = newest.text.slice(0, Math.max(1, Math.floor((now - newest.at) / 12)))\n    const fresh = now - newest.at < 1500\n    put(1, y, '▶', fresh ? newest.color : scale(newest.color, 0.6))\n    write(3, y, fit(shown, W - 4), fresh ? TEXT : scale(TEXT, 0.75))\n  } else {\n    write(3, y, fit('Waiting for a prompt. Give Claude a task with agents.', W - 4), DIM)\n  }\n  y++\n\n  // 5. The ticker: what happened just before, with how long ago.\n  const older = live.events.slice(-1 - ticker, -1).reverse()\n  for (let i = 0; i < ticker; i++) {\n    const event = older[i]\n    if (event) {\n      write(1, y, fit(ago(now - event.at), 4), DIM)\n      write(6, y, fit(event.text, W - 7), scale(event.color, 0.55 - i * 0.1))\n    }\n    y++\n  }\n\n  // 6. The list: one live row per loop.\n  const running = live.agents.filter(a => !a.endedAt).length\n  const head = ` AGENTS ${running} running · ${live.agents.length - running} done `\n  for (let x = 0; x < W; x++) put(x, y, '─', FAINT)\n  write(1, y, head, LIME)\n  y++\n\n  const spin = SPIN[Math.floor(now / 80) % SPIN.length] ?? '·'\n  for (const agent of loops) {\n    if (y >= H) break\n    const done = agent.endedAt !== undefined\n    const last = agent.steps[agent.steps.length - 1]\n    const lastText = last ? last.what : agent.task || 'starts…'\n    put(1, y, done ? '✔' : spin, done ? GREEN : agent.color)\n    if (!narrow) {\n      write(3, y, fit(agent.name, 16), done ? DIM : TEXT)\n      write(20, y, fit(shortModel(agent.model), 7), DIM)\n      write(28, y, clock((agent.endedAt ?? now) - agent.startedAt), done ? DIM : AMBER)\n      write(35, y, fit(`↓${agent.reads} ↑${agent.acts}`, 9), MUTED)\n      write(45, y, fit(lastText, W - 46), done ? DIM : scale(agent.color, 0.9))\n    } else if (tall) {\n      write(3, y, fit(agent.name, 12), done ? DIM : TEXT)\n      write(16, y, clock((agent.endedAt ?? now) - agent.startedAt), done ? DIM : AMBER)\n      write(23, y, fit(`↓${agent.reads} ↑${agent.acts}`, W - 24), MUTED)\n      if (y + 1 < H) {\n        y++\n        write(3, y, fit(lastText, W - 4), done ? DIM : scale(agent.color, 0.9))\n      }\n    } else {\n      // A short, narrow pane: one row per loop, the last step after the timer.\n      write(3, y, fit(agent.name, 11), done ? DIM : TEXT)\n      write(15, y, clock((agent.endedAt ?? now) - agent.startedAt), done ? DIM : AMBER)\n      write(21, y, fit(lastText, W - 22), done ? DIM : scale(agent.color, 0.9))\n    }\n    y++\n  }\n\n  return (new Uint8Array(cells.buffer) as unknown as { toBase64(): string }).toBase64()\n}\n","desktop.ts":"// The desktop view: one animated SVG, drawn again on each change.\n// Every animation starts at a negative offset (its phase at `now`), so a redraw\n// continues the motion instead of starting it over.\nimport type { Agent, Live } from './live'\nimport { AMBER, CYAN, GREEN, LIME, shortModel } from './live'\n\nconst VW = 760\nconst VH = 540\nconst CX = 400\nconst CY = 228\nconst RX = 235\nconst RY = 140\n\nconst hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`\n\nfunction esc(text: string): string {\n  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;')\n}\n\nfunction cut(text: string, max: number): string {\n  return text.length > max ? `${text.slice(0, max - 1)}…` : text\n}\n\n// The phase of a repeating animation at `now`, as a negative SMIL begin.\nfunction phase(now: number, ms: number, shift = 0): string {\n  return `-${((now + shift) % ms) / 1000}s`\n}\n\nfunction spot(agent: Agent, count: number) {\n  const n = Math.max(3, count)\n  const angle = (agent.slot * 2 * Math.PI) / n - Math.PI / 2 + 0.35\n  return { x: CX + RX * Math.cos(angle), y: CY + RY * Math.sin(angle), angle }\n}\n\nexport function drawSvg(live: Live, now: number): string {\n  const out: string[] = []\n  const running = live.agents.filter(a => a.endedAt === undefined).length\n  const done = live.agents.length - running\n\n  out.push(`<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ${VW} ${VH}\" width=\"${VW}\" height=\"${VH}\" font-family=\"ui-sans-serif, -apple-system, 'Inter', sans-serif\">`)\n  out.push(`<defs>\n    <radialGradient id=\"sky\" cx=\"50%\" cy=\"42%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#16213a\"/><stop offset=\"0.6\" stop-color=\"#0b1020\"/><stop offset=\"1\" stop-color=\"#05070d\"/></radialGradient>\n    <radialGradient id=\"core\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#f4ffd0\"/><stop offset=\"0.45\" stop-color=\"${hex(LIME)}\"/><stop offset=\"1\" stop-color=\"${hex(LIME)}\" stop-opacity=\"0\"/></radialGradient>\n    <filter id=\"glow\" x=\"-80%\" y=\"-80%\" width=\"260%\" height=\"260%\"><feGaussianBlur stdDeviation=\"5\" result=\"b\"/><feMerge><feMergeNode in=\"b\"/><feMergeNode in=\"SourceGraphic\"/></feMerge></filter>\n    <filter id=\"soft\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"2.2\"/></filter>\n  </defs>\n  <style>\n    .label { fill: #e6ebf5; font-size: 13px; font-weight: 600; }\n    .sub { fill: #8b98b3; font-size: 11px; }\n    .chip { fill: #c9d4ea; font-size: 10.5px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }\n    .agent:hover .halo { opacity: 0.55; }\n    .agent { cursor: default; }\n  </style>`)\n\n  // The sky: a deep gradient with twinkling stars.\n  out.push(`<rect x=\"0\" y=\"0\" width=\"${VW}\" height=\"${VH}\" rx=\"18\" fill=\"url(#sky)\"/>`)\n  for (let s = 0; s < 70; s++) {\n    const h = Math.imul(s + 1, 2654435761) >>> 0\n    const x = h % VW\n    const y = (h >>> 11) % 400\n    const r = 0.5 + ((h >>> 5) % 10) / 10\n    const dur = 2400 + (h % 3000)\n    out.push(`<circle cx=\"${x}\" cy=\"${y}\" r=\"${r}\" fill=\"#cfe1ff\"><animate attributeName=\"opacity\" values=\"0.1;0.8;0.1\" dur=\"${dur}ms\" begin=\"${phase(now, dur, h % 1000)}\" repeatCount=\"indefinite\"/></circle>`)\n  }\n\n  // The legend and the header.\n  const legend: [string, string][] = [\n    [hex(LIME), 'main session'],\n    ['#ff7ad9', 'agent'],\n    [hex(CYAN), 'reads a file'],\n    [hex(AMBER), 'acts'],\n    [hex(GREEN), 'done'],\n  ]\n  let lx = 22\n  for (const [color, label] of legend) {\n    out.push(`<circle cx=\"${lx}\" cy=\"24\" r=\"4.5\" fill=\"${color}\" filter=\"url(#glow)\"/><text x=\"${lx + 10}\" y=\"28\" class=\"sub\">${label}</text>`)\n    lx += 22 + label.length * 6.2\n  }\n  out.push(`<text x=\"${VW - 22}\" y=\"28\" text-anchor=\"end\" class=\"sub\"><tspan fill=\"${hex(LIME)}\" font-weight=\"700\">${running}</tspan> running · <tspan fill=\"${hex(GREEN)}\" font-weight=\"700\">${done}</tspan> done · ${live.files.length || live.main.context.length} context files</text>`)\n\n  // The orbit: a slow, flowing dashed ring.\n  out.push(`<ellipse cx=\"${CX}\" cy=\"${CY}\" rx=\"${RX}\" ry=\"${RY}\" fill=\"none\" stroke=\"#2a3b5f\" stroke-width=\"1.2\" stroke-dasharray=\"2 7\"><animate attributeName=\"stroke-dashoffset\" from=\"0\" to=\"-90\" dur=\"6s\" begin=\"${phase(now, 6000)}\" repeatCount=\"indefinite\"/></ellipse>`)\n\n  // The chat: where the person types, and where the mod talks back.\n  const chat = { x: 70, y: CY }\n  const lastIn = [...live.events].reverse().find(e => e.text.startsWith('You give Main'))\n  const lastOut = [...live.events].reverse().find(e => e.text.startsWith('The mod sends'))\n  out.push(`<g><title>The chat: you give Main a task here, and the mod sends its debrief here.</title>\n    <rect x=\"${chat.x - 46}\" y=\"${chat.y - 22}\" width=\"92\" height=\"44\" rx=\"12\" fill=\"#121a2e\" stroke=\"#33466e\"/>\n    <text x=\"${chat.x}\" y=\"${chat.y - 2}\" text-anchor=\"middle\" class=\"label\">CHAT</text>\n    <text x=\"${chat.x}\" y=\"${chat.y + 13}\" text-anchor=\"middle\" class=\"sub\">you + Claude</text></g>`)\n  out.push(`<path id=\"chatline\" d=\"M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}\" stroke=\"#2a3b5f\" stroke-width=\"1\" stroke-dasharray=\"3 5\" fill=\"none\"/>`)\n  for (const [event, color, reverse] of [[lastIn, LIME, false], [lastOut, LIME, true]] as const) {\n    if (!event || now - event.at > 2200) continue\n    const path = reverse ? `M ${CX - 30} ${CY} L ${chat.x + 46} ${chat.y}` : `M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}`\n    out.push(`<circle r=\"6\" fill=\"${hex(color)}\" filter=\"url(#glow)\" opacity=\"0\"><animateMotion path=\"${path}\" dur=\"1.4s\" begin=\"-${(now - event.at) / 1000}s\" fill=\"freeze\"/><animate attributeName=\"opacity\" values=\"0;1;1;0\" dur=\"1.4s\" begin=\"-${(now - event.at) / 1000}s\" fill=\"freeze\"/></circle>`)\n  }\n\n  // Beams from the core to each agent: flowing while it runs, faint when it is done.\n  for (const agent of live.agents) {\n    const p = spot(agent, live.agents.length)\n    const isDone = agent.endedAt !== undefined\n    const c = hex(isDone ? GREEN : agent.color)\n    out.push(`<line x1=\"${CX}\" y1=\"${CY}\" x2=\"${p.x}\" y2=\"${p.y}\" stroke=\"${c}\" stroke-opacity=\"${isDone ? 0.18 : 0.55}\" stroke-width=\"${isDone ? 1 : 1.6}\" stroke-dasharray=\"${isDone ? '0' : '4 10'}\">${isDone ? '' : `<animate attributeName=\"stroke-dashoffset\" from=\"0\" to=\"-28\" dur=\"0.9s\" begin=\"${phase(now, 900)}\" repeatCount=\"indefinite\"/>`}</line>`)\n  }\n\n  // The core: the main session, with rings that pulse outward.\n  for (let k = 0; k < 3; k++) {\n    out.push(`<circle cx=\"${CX}\" cy=\"${CY}\" r=\"26\" fill=\"none\" stroke=\"${hex(LIME)}\" stroke-width=\"1.5\"><animate attributeName=\"r\" values=\"26;62\" dur=\"2.4s\" begin=\"${phase(now, 2400, k * 800)}\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.7;0\" dur=\"2.4s\" begin=\"${phase(now, 2400, k * 800)}\" repeatCount=\"indefinite\"/></circle>`)\n  }\n  const mainCtx = (live.files.length > 0 ? live.files : live.main.context).slice(0, 3)\n  out.push(`<g><title>Main session. Context it carries: ${esc(mainCtx.join(', ') || 'none seen yet')}. Reads ${live.main.reads}, actions ${live.main.acts}.</title>\n    <circle cx=\"${CX}\" cy=\"${CY}\" r=\"34\" fill=\"url(#core)\" opacity=\"0.55\" filter=\"url(#soft)\"/>\n    <circle cx=\"${CX}\" cy=\"${CY}\" r=\"20\" fill=\"${hex(LIME)}\" filter=\"url(#glow)\"><animate attributeName=\"r\" values=\"19;22;19\" dur=\"1.6s\" begin=\"${phase(now, 1600)}\" repeatCount=\"indefinite\"/></circle>\n    <text x=\"${CX}\" y=\"${CY + 4}\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"800\" fill=\"#0b1020\">MAIN</text></g>`)\n  mainCtx.forEach((file, i) => {\n    out.push(`<text x=\"${CX}\" y=\"${CY + 54 + i * 14}\" text-anchor=\"middle\" class=\"chip\" fill-opacity=\"0.7\">◇ ${esc(cut(file, 26))}</text>`)\n  })\n\n  // Particles: a task flies out, a file flies in, an action reports back.\n  for (const particle of live.particles.filter(p => now - p.at < 1600)) {\n    const agent = live.agents.find(a => a.id === particle.agentId)\n    if (!agent) continue\n    const p = spot(agent, live.agents.length)\n    const ago = `-${(now - particle.at) / 1000}s`\n    let path: string\n    let color: number\n    if (particle.kind === 'read') {\n      const a = ((particle.seed % 360) * Math.PI) / 180\n      path = `M ${CX + RX * 1.6 * Math.cos(a)} ${CY + RY * 1.6 * Math.sin(a)} L ${p.x} ${p.y}`\n      color = CYAN\n    } else if (particle.kind === 'spawn') {\n      path = `M ${CX} ${CY} L ${p.x} ${p.y}`\n      color = LIME\n    } else {\n      path = `M ${p.x} ${p.y} L ${CX} ${CY}`\n      color = AMBER\n    }\n    out.push(`<g opacity=\"0\"><animateMotion path=\"${path}\" dur=\"1.2s\" begin=\"${ago}\" fill=\"freeze\"/><animate attributeName=\"opacity\" values=\"0;1;1;0\" dur=\"1.2s\" begin=\"${ago}\" fill=\"freeze\"/>\n      <rect x=\"-5\" y=\"-5\" width=\"10\" height=\"10\" transform=\"rotate(45)\" fill=\"${hex(color)}\" filter=\"url(#glow)\"/>\n      ${particle.kind === 'read' ? `<text y=\"-12\" text-anchor=\"middle\" class=\"chip\" fill=\"${hex(CYAN)}\">${esc(cut(particle.label, 22))}</text>` : ''}</g>`)\n  }\n\n  // The agents: a glowing node, a spinning ring while it runs, its files as chips.\n  for (const agent of live.agents) {\n    const p = spot(agent, live.agents.length)\n    const isDone = agent.endedAt !== undefined\n    const c = hex(isDone ? GREEN : agent.color)\n    const secs = Math.round(((agent.endedAt ?? now) - agent.startedAt) / 1000)\n    const last = agent.steps.slice(-4).map(s => s.what).join(' · ')\n    const below = p.y >= CY - 10\n    const files = agent.context.slice(-3)\n    // Below the core the text hangs under the node; above it, it stacks upward.\n    const ty = below ? p.y + 34 : p.y - 34 - files.length * 13\n    out.push(`<g class=\"agent\"><title>${esc(agent.name)} (${esc(shortModel(agent.model))})\nTask: ${esc(agent.task || '–')}\nRead ${agent.reads} · acted ${agent.acts} · ${secs}s\nContext: ${esc(agent.context.join(', ') || 'none yet')}\nLast: ${esc(last || '–')}</title>\n      <circle class=\"halo\" cx=\"${p.x}\" cy=\"${p.y}\" r=\"30\" fill=\"${c}\" opacity=\"0.18\" filter=\"url(#soft)\"/>\n      ${isDone ? '' : `<circle cx=\"${p.x}\" cy=\"${p.y}\" r=\"21\" fill=\"none\" stroke=\"${c}\" stroke-width=\"2\" stroke-dasharray=\"22 110\" stroke-linecap=\"round\"><animateTransform attributeName=\"transform\" type=\"rotate\" from=\"0 ${p.x} ${p.y}\" to=\"360 ${p.x} ${p.y}\" dur=\"1.1s\" begin=\"${phase(now, 1100, agent.slot * 300)}\" repeatCount=\"indefinite\"/></circle>`}\n      <circle cx=\"${p.x}\" cy=\"${p.y}\" r=\"13\" fill=\"${c}\" filter=\"url(#glow)\">${isDone ? '' : `<animate attributeName=\"opacity\" values=\"0.75;1;0.75\" dur=\"1.3s\" begin=\"${phase(now, 1300, agent.slot * 400)}\" repeatCount=\"indefinite\"/>`}</circle>\n      ${isDone ? `<path d=\"M ${p.x - 5} ${p.y} l 3.5 4 l 7 -8\" stroke=\"#0b1020\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>` : ''}\n      <text x=\"${p.x}\" y=\"${ty}\" text-anchor=\"middle\" class=\"label\">${esc(cut(agent.name, 18))}</text>\n      <text x=\"${p.x}\" y=\"${ty + 15}\" text-anchor=\"middle\" class=\"sub\">${esc(shortModel(agent.model))} · ${isDone ? `done in ${secs}s` : `${agent.reads} reads · ${agent.acts} acts`}</text>`)\n    files.forEach((file, i) => {\n      out.push(`<text x=\"${p.x}\" y=\"${ty + 31 + i * 13}\" text-anchor=\"middle\" class=\"chip\" fill=\"${c}\" fill-opacity=\"${isDone ? 0.5 : 0.85}\">◇ ${esc(cut(file, 24))}</text>`)\n    })\n    out.push(`</g>`)\n  }\n\n  // The caption bar: the newest event typed out, and the two before it.\n  out.push(`<rect x=\"16\" y=\"${VH - 104}\" width=\"${VW - 32}\" height=\"88\" rx=\"12\" fill=\"#0e1528\" stroke=\"#22304f\"/>`)\n  const newest = live.events[live.events.length - 1]\n  if (newest) {\n    const fresh = Math.max(0, now - newest.at)\n    const text = cut(newest.text, 90)\n    const typed = Math.min(1, fresh / (text.length * 18))\n    out.push(`<clipPath id=\"type\"><rect x=\"40\" y=\"${VH - 94}\" height=\"28\" width=\"${typed * 680}\"><animate attributeName=\"width\" to=\"680\" dur=\"${Math.max(0.01, (1 - typed) * text.length * 0.018)}s\" fill=\"freeze\"/></rect></clipPath>`)\n    out.push(`<circle cx=\"30\" cy=\"${VH - 79}\" r=\"5\" fill=\"${hex(newest.color)}\" filter=\"url(#glow)\"><animate attributeName=\"opacity\" values=\"1;0.3;1\" dur=\"1s\" repeatCount=\"indefinite\"/></circle>`)\n    out.push(`<text x=\"42\" y=\"${VH - 74}\" font-size=\"15\" font-weight=\"600\" fill=\"#f2f5fb\" clip-path=\"url(#type)\">${esc(text)}</text>`)\n  } else {\n    out.push(`<text x=\"30\" y=\"${VH - 74}\" font-size=\"14\" fill=\"#8b98b3\">Waiting for a prompt. Give Claude a task with agents.</text>`)\n  }\n  live.events\n    .slice(-3, -1)\n    .reverse()\n    .forEach((event, i) => {\n      const s = Math.max(0, Math.round((now - event.at) / 1000))\n      out.push(`<text x=\"42\" y=\"${VH - 50 + i * 18}\" font-size=\"12\" fill=\"${hex(event.color)}\" fill-opacity=\"${0.75 - i * 0.25}\"><tspan fill=\"#5b6785\">${s}s ago  </tspan>${esc(cut(event.text, 96))}</text>`)\n    })\n\n  out.push(`</svg>`)\n  return out.join('\\n')\n}\n"};</script>
+<script>window.SOURCES = {"plugin.json":"{\n  \"name\": \"agent-orbit\",\n  \"version\": \"0.1.0\",\n  \"description\": \"A live animated view in the terminal: the main session as a core, its agents in orbit, and the files they read flying in\",\n  \"types\": \"./types/index.d.ts\",\n  \"license\": \"MIT\",\n  \"author\": { \"name\": \"Like A Human\" }\n}\n","hooks.json":"{ \"modules\": [\"./register.tsx\"] }\n","register.tsx":"import { atom, read, update } from 'claude-code'\nimport type { EngineInterface, Register } from 'claude-code'\n\nimport { drawSvg } from './desktop'\nimport { drawFrame } from './frame'\nimport type { Agent, Step } from './live'\nimport { AMBER, CYAN, GREEN, LIME, MAIN, PALETTE, addChat, baseName, blankAgent, hash, newLive, say, shortModel, verbOf } from './live'\n\nconst PANE = 'agent-orbit'\nconst RASTER = 'orbit'\nconst READS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Skill', 'LS'])\n\n// A counter for the text view on surfaces without a Raster.\nconst version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)\n\n// The live model and the size of the mounted Raster. Both start over on a reload.\nconst live = newLive(Date.now())\nlet size: { columns: number; rows: number } | undefined\n// True once a desktop pane drew the SVG view, and when it last redrew.\nlet vectorShown = false\nlet lastRedraw = 0\n// Agents whose end the mod already reported to the chat.\nconst reported = new Set<string>()\n\nfunction whatOf(input: Record<string, unknown>, tool: string): string {\n  const value = ['file_path', 'pattern', 'url', 'query', 'skill', 'command', 'description']\n    .map(key => input[key])\n    .find(v => typeof v === 'string')\n  return String(value ?? tool)\n}\n\nfunction loopOf(id: string | undefined): Agent {\n  if (!id) return live.main\n  let agent = live.agents.find(a => a.id === id)\n  if (!agent) {\n    const slot = live.agents.length\n    agent = blankAgent(id, 'agent', Date.now(), slot, PALETTE[slot % PALETTE.length] ?? CYAN)\n    agent.name = `Agent ${slot + 1}`\n    live.agents.push(agent)\n  }\n  return agent\n}\n\n// The live web page, like the build board. The mod posts its model to a small\n// bridge (bridge/serve.ts) about 3 times a second while agents run; the bridge streams\n// it to every open page, so the page and the pane draw the same model. The bridge\n// answers each post with the prompts the page queued, and the mod sends them to Claude.\nconst BRIDGE = 'http://127.0.0.1:4747'\nlet lastSent = 0\nlet bridgeDownUntil = 0\n// Who this chat is on the page: the page shows one chip per session, and a button\n// sends its prompt to the session that is selected there.\nconst session = { id: crypto.randomUUID(), label: 'Claude Code', surface: 'terminal' as string }\n\nfunction mirror($: EngineInterface, now: number): void {\n  const busy = live.agents.some(a => a.endedAt === undefined) || now - (live.events[live.events.length - 1]?.at ?? 0) < 3000\n  if (now < bridgeDownUntil || now - lastSent < (busy ? 300 : 3000)) return\n  lastSent = now\n  void $.http\n    .fetch(`${BRIDGE}/state`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...live, sentAt: now, session }) })\n    .then(async r => {\n      if (!r.ok) {\n        bridgeDownUntil = now + 5000\n        return\n      }\n      // A prompt from the page goes into the chat as if the person typed it.\n      const { prompts } = JSON.parse(r.text) as { prompts?: string[] }\n      for (const text of prompts ?? []) {\n        say(live, 'The web page sends a prompt to the chat', LIME, Date.now())\n        $.ui.toast('The orbit page sent a prompt to Claude')\n        await $.prompt.submit({ text, asUser: true })\n      }\n    })\n    .catch(() => {\n      bridgeDownUntil = now + 5000\n    })\n}\n\n// Starts the bridge when it does not answer (detached, so it outlives the turn), like /board.\nasync function ensureBridge($: EngineInterface): Promise<boolean> {\n  const up = async () => (await $.http.fetch(`${BRIDGE}/health`).catch(() => ({ ok: false }))).ok\n  if (await up()) return true\n  // The mod sits in <repo>/mods/agent-orbit; the bridge in <repo>/bridge.\n  const start = `cd \"${$.plugin.root}\" && { [ -d .claude-plugin ] || cd ..; } && cd ../.. && nohup bun bridge/serve.ts > /tmp/agent-orbit-bridge.log 2>&1 &`\n  await $.process.run(['sh', '-c', start])\n  for (let i = 0; i < 20; i++) {\n    await $.clock.sleep(500)\n    if (await up()) {\n      bridgeDownUntil = 0\n      return true\n    }\n  }\n  return false\n}\n\nexport const register: Register = on => {\n  on('session.start', async ($, e, next) => {\n    session.surface = e.surface ?? 'terminal'\n    session.label = `${session.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${e.cwd.split('/').pop() ?? ''}`\n    await $.command.register({ name: 'orbit', description: 'Open the live agent orbit; /orbit web opens the live web page' })\n    void $.ui.open({ id: PANE, title: 'Agent orbit' })\n\n    // The animation: about 16 frames a second, painted into the mounted Raster.\n    $.clock.every(60, () => {\n      const now = Date.now()\n      if (size) {\n        const cells = drawFrame(live, size.columns, size.rows, now)\n        void $.ui.blit({ requestId: PANE, key: RASTER, cells, ...size }).catch(() => {})\n      }\n      mirror($, now)\n      // The desktop SVG animates by itself; it only needs a redraw every 2 s while agents run.\n      const busy = live.agents.some(a => a.endedAt === undefined)\n      if (vectorShown && busy && now - lastRedraw > 2000) {\n        lastRedraw = now\n        void update($, version, v => v + 1).catch(() => {})\n      }\n    })\n\n    return next(e)\n  })\n\n  on('command.run', { command: 'orbit' }, async ($, e) => {\n    // `/orbit web` starts the bridge and opens the live page, like `/board`.\n    if (e.args.trim() === 'web') {\n      if (!(await ensureBridge($))) return { text: 'The bridge did not start. See /tmp/agent-orbit-bridge.log (it needs bun).' }\n      await $.process.run(['open', BRIDGE])\n      return { text: `The live orbit page is open: ${BRIDGE}` }\n    }\n    await $.ui.open({ id: PANE, title: 'Agent orbit' })\n    return { text: 'Agent orbit opened. Type /orbit web for the live web page.' }\n  })\n\n  // A prompt the person enters counts as their ask: the pane opens at any width.\n  on('prompt.submit', async ($, e, next) => {\n    void $.ui.open({ id: PANE, title: 'Agent orbit' }).catch(() => {})\n    if (e.origin.kind !== 'plugin') say(live, 'You give Main a task', LIME, Date.now())\n    // The chat itself goes to the live page too: what was typed, and who sent it.\n    addChat(live, e.origin.kind === 'plugin' ? 'plugin' : 'you', e.text, Date.now())\n    await update($, version, v => v + 1).catch(() => {})\n    return next(e)\n  })\n\n  // The context the session carries before its first word: its instruction files.\n  on('prompt.context', async ($, e, next) => {\n    live.files = (e.instructionFiles ?? []).map(file => `${file.kind}: ${baseName(file.path)}`)\n    if (live.files.length > 0) say(live, `Main loads ${live.files.length} instruction files (CLAUDE.md)`, CYAN, Date.now())\n    await update($, version, v => v + 1).catch(() => {})\n    return next(e)\n  })\n\n  on('skill.prompt', async ($, e, next) => {\n    if (!live.skills.includes(e.skill)) live.skills.push(e.skill)\n    say(live, `A skill loads: ${e.skill}`, CYAN, Date.now())\n    return next(e)\n  })\n\n  // A new agent: it takes a slot in the orbit, and a star flies out to it.\n  on('agent.spawn', async ($, e, next) => {\n    const started = await next(e)\n    if (started.deny === undefined && started.agentId) {\n      const agent = loopOf(started.agentId)\n      const same = live.agents.filter(a => a.type === e.subagentType).length + 1\n      agent.type = e.subagentType\n      agent.name = `${e.subagentType} ${same}`\n      agent.task = e.description\n      agent.model = shortModel(started.model)\n      agent.startedAt = Date.now()\n      live.particles.push({ kind: 'spawn', agentId: agent.id, label: '', seed: 0, at: Date.now() })\n      say(live, `Main hands ${agent.name} a task: \"${e.description}\" (${agent.model})`, LIME, Date.now())\n      await update($, version, v => v + 1).catch(() => {})\n    }\n    return started\n  })\n\n  // Every tool call: a read flies in from outside, an action reports back to the core.\n  on('tool.call', async ($, e, next) => {\n    const agent = loopOf(e.agentId)\n    const what = whatOf(e as unknown as Record<string, unknown>, e.tool)\n    const step: Step = { tool: e.tool, what: verbOf(e.tool, what), isRead: READS.has(e.tool), at: Date.now() }\n    agent.steps = [...agent.steps, step].slice(-30)\n    if (step.isRead) {\n      agent.reads++\n      const file = baseName(what)\n      agent.context = [...agent.context.filter(f => f !== file), file].slice(-4)\n    } else agent.acts++\n    say(live, `${agent.name} ${step.what}`, step.isRead ? CYAN : AMBER, Date.now())\n    if (agent.id !== MAIN) {\n      live.particles.push({\n        kind: step.isRead ? 'read' : 'act',\n        agentId: agent.id,\n        label: baseName(what),\n        seed: hash(what),\n        at: Date.now(),\n      })\n    }\n    await update($, version, v => v + 1).catch(() => {})\n    return next(e)\n  })\n\n  // An agent ends: it parks with a check mark.\n  on('turn.complete', async ($, e, next) => {\n    // Claude's answer to the chat (the main loop, not an agent) goes to the live page.\n    if (!e.agentId && !e.isAborted && e.answer.trim()) addChat(live, 'claude', e.answer.trim(), Date.now())\n    if (e.agentId) {\n      const agent = live.agents.find(a => a.id === e.agentId)\n      if (agent && agent.endedAt === undefined) {\n        agent.endedAt = Date.now()\n        const s = Math.round((agent.endedAt - agent.startedAt) / 1000)\n        say(live, `${agent.name} is done after ${s}s: read ${agent.reads}, did ${agent.acts}`, GREEN, Date.now())\n      }\n      await update($, version, v => v + 1).catch(() => {})\n\n      // The mod talks back: when the last running agent ends, it sends a prompt to the chat.\n      const wave = live.agents.filter(a => !reported.has(a.id))\n      if (wave.length > 0 && wave.every(a => a.endedAt !== undefined)) {\n        wave.forEach(a => reported.add(a.id))\n        const lines = wave.map(\n          a => `- ${a.name} (${a.model}), ${Math.round(((a.endedAt ?? 0) - a.startedAt) / 1000)}s, read ${a.reads}, did ${a.acts}: ${a.task}`,\n        )\n        say(live, 'The mod sends a debrief prompt to the chat', LIME, Date.now())\n        await update($, version, v => v + 1).catch(() => {})\n        void $.prompt\n          .submit({\n            text: [\n              `Agent orbit saw ${wave.length} agent(s) finish:`,\n              ...lines,\n              'Give a debrief in at most 4 lines: which agent read the most, and the one finding of each agent.',\n            ].join('\\n'),\n          })\n          .catch(() => {})\n      }\n    }\n    return next(e)\n  })\n\n  on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {\n    // The surface that draws the pane names this chat on the page (also after a reload).\n    if (session.surface !== e.surface || session.label === 'Claude Code') {\n      session.surface = e.surface\n      const folder = (await $.session.cwd().catch(() => '')).split('/').pop() ?? ''\n      session.label = `${e.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${folder}`\n    }\n    // The terminal: one Raster, painted by the clock above.\n    if (e.surface === 'terminal') {\n      const { Raster } = $.ui.resolve(e)\n      const columns = Math.max(20, Math.min(160, e.props.bodyColumns))\n      const rows = Math.max(10, Math.min(48, e.props.scroll.bodyRows))\n      size = { columns, rows }\n      return <Raster key={RASTER} columns={columns} rows={rows} cells={drawFrame(live, columns, rows, Date.now())} />\n    }\n\n    // The desktop: one animated SVG with hover tooltips, drawn again on each change.\n    if (e.surface === 'desktop') {\n      const { Svg } = $.ui.resolve(e)\n      await read($, version)\n      vectorShown = true\n      lastRedraw = Date.now()\n      return <Svg source={drawSvg(live, Date.now())} alt=\"Agent orbit: the main session, its agents, and the files they read\" isInteractive={true} />\n    }\n\n    // Other surfaces: a plain text view of the same model.\n    const { Box, Text } = $.ui.resolve(e)\n    await read($, version)\n    return (\n      <Box flexDirection=\"column\">\n        <Text dimColor>The live orbit draws in the Claude CLI. Here is the list.</Text>\n        {[live.main, ...live.agents].map(agent => (\n          <Text>\n            {agent.endedAt ? 'done' : 'runs'} · {agent.name} {agent.model} · read {agent.reads} · did {agent.acts}\n          </Text>\n        ))}\n        {live.events.slice(-5).map(event => (\n          <Text dimColor>{event.text}</Text>\n        ))}\n      </Box>\n    )\n  })\n}\n","live.ts":"// The live model: what the animation draws. Plain module state, filled by the hooks.\n\nexport type Step = { tool: string; what: string; isRead: boolean; at: number }\n\nexport type Agent = {\n  id: string\n  type: string\n  name: string\n  task: string\n  model: string\n  startedAt: number\n  endedAt?: number\n  slot: number\n  color: number\n  steps: Step[]\n  reads: number\n  acts: number\n  /** The files this agent read: its context, shown as satellites around it. */\n  context: string[]\n}\n\nexport type Particle = {\n  kind: 'spawn' | 'read' | 'act'\n  agentId: string\n  label: string\n  seed: number\n  at: number\n}\n\n/** One message of the chat, mirrored to the live page. */\nexport type ChatLine = { role: 'you' | 'plugin' | 'claude'; text: string; at: number }\n\n/** One thing that happened, in plain words, for the caption and the ticker. */\nexport type Event = { text: string; color: number; at: number }\n\nexport type Live = {\n  main: Agent\n  agents: Agent[]\n  particles: Particle[]\n  events: Event[]\n  chat: ChatLine[]\n  files: string[]\n  skills: string[]\n}\n\nexport const MAIN = 'main'\n// Like A Human tokens, dark mode: lime is the scarce accent, the rest are the state inks.\nexport const LIME = 0xdefeb3\nexport const CYAN = 0xa3d2ff\nexport const AMBER = 0xe4c57e\nexport const GREEN = 0x7fc79a\n\n// One colour per agent, in order of spawn.\nexport const PALETTE = [0x8fbce4, 0xe88f8f, 0xd4a64a, 0xc7d4e2, 0x7fc79a, 0xa3d2ff, 0xe4c57e]\n\nexport function newLive(now: number): Live {\n  return {\n    main: blankAgent(MAIN, 'main session', now, -1, LIME),\n    agents: [],\n    particles: [],\n    events: [],\n    chat: [],\n    files: [],\n    skills: [],\n  }\n}\n\nexport function blankAgent(id: string, type: string, now: number, slot: number, color: number): Agent {\n  return {\n    id,\n    type,\n    name: id === MAIN ? 'Main' : type,\n    task: '',\n    model: '',\n    startedAt: now,\n    slot,\n    color,\n    steps: [],\n    reads: 0,\n    acts: 0,\n    context: [],\n  }\n}\n\nexport function say(live: Live, text: string, color: number, at: number): void {\n  live.events = [...live.events, { text, color, at }].slice(-20)\n}\n\nexport function addChat(live: Live, role: ChatLine['role'], text: string, at: number): void {\n  live.chat = [...live.chat, { role, text: text.slice(0, 1200), at }].slice(-12)\n}\n\nexport function hash(text: string): number {\n  let h = 2166136261\n  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)\n  return h >>> 0\n}\n\nexport function shortModel(model: string): string {\n  const m = /(opus|sonnet|haiku|fable)/i.exec(model)\n  return m?.[1] ? m[1].toLowerCase() : model.slice(0, 8)\n}\n\nexport function baseName(text: string): string {\n  return text.split('/').pop()?.slice(0, 22) ?? text\n}\n\n/** A tool call in plain words: \"reads frame.ts\", \"searches for TODO\". */\nexport function verbOf(tool: string, what: string): string {\n  const name = baseName(what)\n  switch (tool) {\n    case 'Read':\n      return `reads ${name}`\n    case 'Grep':\n      return `searches for \"${what.slice(0, 24)}\"`\n    case 'Glob':\n      return `looks for files ${what.slice(0, 24)}`\n    case 'LS':\n      return `lists ${name}`\n    case 'WebFetch':\n    case 'WebSearch':\n      return `reads the web: ${what.slice(0, 28)}`\n    case 'Skill':\n      return `loads the skill ${what}`\n    case 'Edit':\n    case 'Write':\n      return `edits ${name}`\n    case 'Bash':\n      return `runs ${what.slice(0, 28)}`\n    case 'Agent':\n      return `starts an agent: ${what.slice(0, 28)}`\n    default:\n      return `uses ${tool}`\n  }\n}\n","frame.ts":"// Draws one frame of the orbit into Raster cells: [codePoint, fg, bg] per cell.\nimport type { Agent, Live } from './live'\nimport { AMBER, CYAN, GREEN, LIME, hash, shortModel } from './live'\n\nconst DEFAULT = 0x01000000\nconst SPIN = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'\nconst DIM = 0x46576a\nconst FAINT = 0x1f3d66\nconst TEXT = 0xeaf1f8\nconst MUTED = 0x9fb3c8\n\nfunction scale(color: number, k: number): number {\n  const r = Math.min(255, Math.round(((color >> 16) & 255) * k))\n  const g = Math.min(255, Math.round(((color >> 8) & 255) * k))\n  const b = Math.min(255, Math.round((color & 255) * k))\n  return (r << 16) | (g << 8) | b\n}\n\n// Only width-1 characters: anything wide or outside the BMP becomes '?'.\nfunction safe(code: number): number {\n  if (code < 0x20 || code === 0x7f) return 0x20\n  if (code > 0xffff) return 0x3f\n  if (\n    (code >= 0x1100 && code <= 0x115f) ||\n    (code >= 0x2e80 && code <= 0xa4cf) ||\n    (code >= 0xac00 && code <= 0xd7a3) ||\n    (code >= 0xf900 && code <= 0xfaff) ||\n    (code >= 0xfe30 && code <= 0xfe4f) ||\n    (code >= 0xff00 && code <= 0xff60) ||\n    (code >= 0xffe0 && code <= 0xffe6) ||\n    (code >= 0xd800 && code <= 0xdfff)\n  )\n    return 0x3f\n  return code\n}\n\nfunction clock(ms: number): string {\n  const s = Math.max(0, Math.floor(ms / 1000))\n  return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`\n}\n\nfunction fit(text: string, width: number): string {\n  if (width <= 0) return ''\n  return text.length > width ? `${text.slice(0, Math.max(0, width - 1))}…` : text.padEnd(width)\n}\n\nfunction ago(ms: number): string {\n  const s = Math.floor(ms / 1000)\n  return s < 1 ? 'now' : `${s}s`\n}\n\nexport function drawFrame(live: Live, columns: number, rows: number, now: number): string {\n  const W = Math.max(1, columns)\n  const H = Math.max(1, rows)\n  const narrow = W < 80\n  const cells = new Uint32Array(W * H * 3)\n  for (let i = 0; i < W * H; i++) {\n    cells[i * 3] = 0x20\n    cells[i * 3 + 1] = DEFAULT\n    cells[i * 3 + 2] = DEFAULT\n  }\n  const put = (x: number, y: number, ch: string, fg: number) => {\n    const cx = Math.round(x)\n    const cy = Math.round(y)\n    if (cx < 0 || cy < 0 || cx >= W || cy >= H) return\n    const i = (cy * W + cx) * 3\n    cells[i] = safe(ch.codePointAt(0) ?? 0x20)\n    cells[i + 1] = fg\n  }\n  const write = (x: number, y: number, text: string, fg: number) => {\n    let i = 0\n    for (const ch of text) put(x + i++, y, ch, fg)\n  }\n\n  // The layout, top to bottom: legend, sky, caption, ticker, list.\n  const loops = [live.main, ...live.agents]\n  const tall = H >= 28\n  const perLoop = narrow && tall ? 2 : 1\n  let listRows = Math.min(loops.length * perLoop, Math.max(2, Math.floor(H / 3)))\n  let ticker = H >= 34 ? 3 : H >= 26 ? 2 : 0\n  let skyH = H - 1 - 1 - ticker - 1 - listRows\n  if (skyH < 9) {\n    ticker = 0\n    skyH = H - 3 - listRows\n  }\n  if (skyH < 7) {\n    listRows = Math.max(1, H - 3 - 7)\n    skyH = H - 3 - listRows\n  }\n  const top = 1\n  const cx = W / 2\n  const cy = top + skyH / 2\n  const rx = Math.max(6, Math.min(W * 0.34, skyH * 1.5))\n  const ry = Math.max(2, skyH * 0.34)\n\n  // The legend: what each mark means.\n  const legend: [string, number, string][] = [\n    ['◉', LIME, 'main session'],\n    ['●', 0xe88f8f, 'agent'],\n    ['◆', CYAN, 'reads a file'],\n    ['◆', AMBER, 'acts'],\n    ['★', LIME, 'task out'],\n    ['✔', GREEN, 'done'],\n  ]\n  let lx = 1\n  for (const [mark, color, label] of legend) {\n    const item = narrow ? label.split(' ')[0] ?? label : label\n    if (lx + 3 + item.length > W) break\n    put(lx, 0, mark, color)\n    write(lx + 2, 0, item, MUTED)\n    lx += item.length + 4\n  }\n\n  // The sky: stars that twinkle.\n  for (let s = 0; s < Math.floor((W * skyH) / 50); s++) {\n    const h = hash(`star${s}`)\n    const glow = 0.5 + 0.5 * Math.sin(now / 900 + (h % 628) / 100)\n    put(h % W, top + ((h >>> 12) % skyH), glow > 0.85 ? '+' : '·', scale(0xc7d4e2, 0.2 + 0.4 * glow))\n  }\n\n  // The orbit itself.\n  for (let a = 0; a < 360; a += 5) {\n    const t = (a * Math.PI) / 180\n    put(cx + rx * Math.cos(t), cy + ry * Math.sin(t), '·', FAINT)\n  }\n\n  // Where each agent is now.\n  const n = Math.max(3, live.agents.length)\n  const where = (agent: Agent, at: number) => {\n    const until = agent.endedAt ?? at\n    const angle = (agent.slot * 2 * Math.PI) / n - Math.PI / 2 + ((until - agent.startedAt) / 1000) * 0.35\n    return { x: cx + rx * Math.cos(angle), y: cy + ry * Math.sin(angle) }\n  }\n\n  // Beams from the core to each running agent, with a dash that flows outward.\n  for (const agent of live.agents) {\n    if (agent.endedAt) continue\n    const p = where(agent, now)\n    const steps = Math.ceil(Math.max(Math.abs(p.x - cx), Math.abs(p.y - cy) * 2))\n    for (let k = 3; k < steps - 1; k++) {\n      const lit = (((k - Math.floor(now / 90)) % 5) + 5) % 5 === 0\n      put(cx + ((p.x - cx) * k) / steps, cy + ((p.y - cy) * k) / steps, lit ? '•' : '·', lit ? agent.color : scale(agent.color, 0.25))\n    }\n  }\n\n  // Particles: a task flies out, a file flies in, an action reports back.\n  live.particles = live.particles.filter(p => now - p.at < 1400)\n  for (const particle of live.particles) {\n    const agent = live.agents.find(a => a.id === particle.agentId)\n    if (!agent) continue\n    const t = Math.min(1, (now - particle.at) / 1100)\n    const ease = 1 - (1 - t) * (1 - t)\n    const target = where(agent, now)\n    if (particle.kind === 'read') {\n      const angle = ((particle.seed % 360) * Math.PI) / 180\n      const sx = cx + rx * 1.4 * Math.cos(angle)\n      const sy = Math.max(top, Math.min(top + skyH - 1, cy + ry * 1.4 * Math.sin(angle)))\n      const x = sx + (target.x - sx) * ease\n      const y = sy + (target.y - sy) * ease\n      put(x - (target.x - sx) * 0.07, y - (target.y - sy) * 0.07, '·', scale(CYAN, 0.5))\n      put(x, y, '◆', CYAN)\n      if (t < 0.55) {\n        const label = particle.label\n        write(Math.max(0, Math.min(W - label.length, x - label.length / 2)), Math.max(top, y - 1), label, scale(CYAN, 1 - t))\n      }\n    } else {\n      const from = particle.kind === 'spawn' ? { x: cx, y: cy } : target\n      const to = particle.kind === 'spawn' ? target : { x: cx, y: cy }\n      put(from.x + (to.x - from.x) * ease, from.y + (to.y - from.y) * ease, particle.kind === 'spawn' ? '★' : '◆', particle.kind === 'spawn' ? LIME : AMBER)\n    }\n  }\n\n  // The core: the main session, pulsing, with its own context under it.\n  const beat = 0.6 + 0.4 * Math.sin(now / 260)\n  for (let a = 0; a < 360; a += 30) {\n    const t = (a * Math.PI) / 180 + now / 1200\n    put(cx + 3.2 * Math.cos(t), cy + 1.4 * Math.sin(t), '·', scale(LIME, 0.3 + 0.4 * beat))\n  }\n  put(cx, cy, '◉', scale(LIME, 0.55 + 0.45 * beat))\n  write(cx - 2, cy + 2, 'MAIN', LIME)\n  const mainContext = live.files.length > 0 ? live.files : live.main.context\n  mainContext.slice(0, skyH >= 14 ? 2 : 0).forEach((file, i) => {\n    const label = `◇ ${file}`\n    if (cy + 3 + i < top + skyH) write(cx - Math.floor(label.length / 2), cy + 3 + i, label, scale(LIME, 0.5))\n  })\n\n  // The agents: a trail, the name, and the files it read as satellites (its context).\n  for (const agent of live.agents) {\n    const done = agent.endedAt !== undefined\n    if (!done) {\n      for (let k = 4; k >= 1; k--) {\n        const p = where(agent, now - k * 160)\n        put(p.x, p.y, '·', scale(agent.color, 0.7 - k * 0.14))\n      }\n    }\n    const p = where(agent, now)\n    const blink = done ? 1 : 0.65 + 0.35 * Math.sin(now / 180 + agent.slot)\n    put(p.x, p.y, done ? '✔' : '●', done ? GREEN : scale(agent.color, blink))\n    const name = fit(agent.name, narrow ? 12 : 18).trimEnd()\n    // Labels go on the outer side, unless that side has no room for them.\n    const right = p.x >= cx ? p.x + 2 + name.length <= W : p.x - 1 - name.length < 0\n    const nx = right ? p.x + 2 : p.x - 1 - name.length\n    write(nx, p.y, name, done ? scale(GREEN, 0.8) : agent.color)\n    agent.context.slice(skyH >= 14 ? -3 : -1).forEach((file, i) => {\n      const y = p.y + 1 + i\n      if (y >= top + skyH) return\n      const label = fit(`◇ ${file}`, narrow ? 14 : 22).trimEnd()\n      const sx = right ? p.x + 2 : p.x - 1 - label.length\n      write(sx, y, label, scale(agent.color, done ? 0.4 : 0.6))\n    })\n  }\n\n  // The caption: the newest event in plain words, typed out.\n  let y = top + skyH\n  const newest = live.events[live.events.length - 1]\n  if (newest) {\n    const shown = newest.text.slice(0, Math.max(1, Math.floor((now - newest.at) / 12)))\n    const fresh = now - newest.at < 1500\n    put(1, y, '▶', fresh ? newest.color : scale(newest.color, 0.6))\n    write(3, y, fit(shown, W - 4), fresh ? TEXT : scale(TEXT, 0.75))\n  } else {\n    write(3, y, fit('Waiting for a prompt. Give Claude a task with agents.', W - 4), DIM)\n  }\n  y++\n\n  // The ticker: what happened just before, with how long ago.\n  const older = live.events.slice(-1 - ticker, -1).reverse()\n  for (let i = 0; i < ticker; i++) {\n    const event = older[i]\n    if (event) {\n      write(1, y, fit(ago(now - event.at), 4), DIM)\n      write(6, y, fit(event.text, W - 7), scale(event.color, 0.55 - i * 0.1))\n    }\n    y++\n  }\n\n  // The list: one live row per loop.\n  const running = live.agents.filter(a => !a.endedAt).length\n  const head = ` AGENTS ${running} running · ${live.agents.length - running} done `\n  for (let x = 0; x < W; x++) put(x, y, '─', FAINT)\n  write(1, y, head, LIME)\n  y++\n\n  const spin = SPIN[Math.floor(now / 80) % SPIN.length] ?? '·'\n  for (const agent of loops) {\n    if (y >= H) break\n    const done = agent.endedAt !== undefined\n    const last = agent.steps[agent.steps.length - 1]\n    const lastText = last ? last.what : agent.task || 'starts…'\n    put(1, y, done ? '✔' : spin, done ? GREEN : agent.color)\n    if (!narrow) {\n      write(3, y, fit(agent.name, 16), done ? DIM : TEXT)\n      write(20, y, fit(shortModel(agent.model), 7), DIM)\n      write(28, y, clock((agent.endedAt ?? now) - agent.startedAt), done ? DIM : AMBER)\n      write(35, y, fit(`↓${agent.reads} ↑${agent.acts}`, 9), MUTED)\n      write(45, y, fit(lastText, W - 46), done ? DIM : scale(agent.color, 0.9))\n    } else if (tall) {\n      write(3, y, fit(agent.name, 12), done ? DIM : TEXT)\n      write(16, y, clock((agent.endedAt ?? now) - agent.startedAt), done ? DIM : AMBER)\n      write(23, y, fit(`↓${agent.reads} ↑${agent.acts}`, W - 24), MUTED)\n      if (y + 1 < H) {\n        y++\n        write(3, y, fit(lastText, W - 4), done ? DIM : scale(agent.color, 0.9))\n      }\n    } else {\n      // A short, narrow pane: one row per loop, the last step after the timer.\n      write(3, y, fit(agent.name, 11), done ? DIM : TEXT)\n      write(15, y, clock((agent.endedAt ?? now) - agent.startedAt), done ? DIM : AMBER)\n      write(21, y, fit(lastText, W - 22), done ? DIM : scale(agent.color, 0.9))\n    }\n    y++\n  }\n\n  return (new Uint8Array(cells.buffer) as unknown as { toBase64(): string }).toBase64()\n}\n","desktop.ts":"// The desktop view: one animated SVG, drawn again on each change.\n// Every animation starts at a negative offset (its phase at `now`), so a redraw\n// continues the motion instead of starting it over.\nimport type { Agent, Live } from './live'\nimport { AMBER, CYAN, GREEN, LIME, shortModel } from './live'\n\nconst VW = 760\nconst VH = 540\nconst CX = 400\nconst CY = 228\nconst RX = 235\nconst RY = 140\n\nconst hex = (c: number) => `#${c.toString(16).padStart(6, '0')}`\n\nfunction esc(text: string): string {\n  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;')\n}\n\nfunction cut(text: string, max: number): string {\n  return text.length > max ? `${text.slice(0, max - 1)}…` : text\n}\n\n// The phase of a repeating animation at `now`, as a negative SMIL begin.\nfunction phase(now: number, ms: number, shift = 0): string {\n  return `-${((now + shift) % ms) / 1000}s`\n}\n\nfunction spot(agent: Agent, count: number) {\n  const n = Math.max(3, count)\n  const angle = (agent.slot * 2 * Math.PI) / n - Math.PI / 2 + 0.35\n  return { x: CX + RX * Math.cos(angle), y: CY + RY * Math.sin(angle), angle }\n}\n\nexport function drawSvg(live: Live, now: number): string {\n  const out: string[] = []\n  const running = live.agents.filter(a => a.endedAt === undefined).length\n  const done = live.agents.length - running\n\n  out.push(`<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 ${VW} ${VH}\" width=\"${VW}\" height=\"${VH}\" font-family=\"Montserrat, 'Space Grotesk', ui-sans-serif, sans-serif\">`)\n  out.push(`<defs>\n    <radialGradient id=\"sky\" cx=\"50%\" cy=\"42%\" r=\"75%\"><stop offset=\"0\" stop-color=\"#15294A\"/><stop offset=\"0.6\" stop-color=\"#0F1F38\"/><stop offset=\"1\" stop-color=\"#08142A\"/></radialGradient>\n    <radialGradient id=\"core\" cx=\"50%\" cy=\"50%\" r=\"50%\"><stop offset=\"0\" stop-color=\"#FFF8E7\"/><stop offset=\"0.45\" stop-color=\"${hex(LIME)}\"/><stop offset=\"1\" stop-color=\"${hex(LIME)}\" stop-opacity=\"0\"/></radialGradient>\n    <filter id=\"glow\" x=\"-80%\" y=\"-80%\" width=\"260%\" height=\"260%\"><feGaussianBlur stdDeviation=\"5\" result=\"b\"/><feMerge><feMergeNode in=\"b\"/><feMergeNode in=\"SourceGraphic\"/></feMerge></filter>\n    <filter id=\"soft\" x=\"-50%\" y=\"-50%\" width=\"200%\" height=\"200%\"><feGaussianBlur stdDeviation=\"2.2\"/></filter>\n  </defs>\n  <style>\n    .label { fill: #EAF1F8; font-size: 13px; font-weight: 700; }\n    .sub { fill: #9FB3C8; font-size: 11px; font-family: 'Space Grotesk', Montserrat, sans-serif; }\n    .chip { fill: #C7D4E2; font-size: 10.5px; font-family: 'Space Mono', ui-monospace, Menlo, monospace; }\n    .agent:hover .halo { opacity: 0.55; }\n    .agent { cursor: default; }\n  </style>`)\n\n  // The sky: a deep gradient with twinkling stars.\n  out.push(`<rect x=\"0\" y=\"0\" width=\"${VW}\" height=\"${VH}\" rx=\"18\" fill=\"url(#sky)\"/>`)\n  for (let s = 0; s < 70; s++) {\n    const h = Math.imul(s + 1, 2654435761) >>> 0\n    const x = h % VW\n    const y = (h >>> 11) % 400\n    const r = 0.5 + ((h >>> 5) % 10) / 10\n    const dur = 2400 + (h % 3000)\n    out.push(`<circle cx=\"${x}\" cy=\"${y}\" r=\"${r}\" fill=\"#C7D4E2\"><animate attributeName=\"opacity\" values=\"0.1;0.8;0.1\" dur=\"${dur}ms\" begin=\"${phase(now, dur, h % 1000)}\" repeatCount=\"indefinite\"/></circle>`)\n  }\n\n  // The legend and the header.\n  const legend: [string, string][] = [\n    [hex(LIME), 'main session'],\n    ['#E88F8F', 'agent'],\n    [hex(CYAN), 'reads a file'],\n    [hex(AMBER), 'acts'],\n    [hex(GREEN), 'done'],\n  ]\n  let lx = 22\n  for (const [color, label] of legend) {\n    out.push(`<circle cx=\"${lx}\" cy=\"24\" r=\"4.5\" fill=\"${color}\" filter=\"url(#glow)\"/><text x=\"${lx + 10}\" y=\"28\" class=\"sub\">${label}</text>`)\n    lx += 22 + label.length * 6.2\n  }\n  out.push(`<text x=\"${VW - 22}\" y=\"28\" text-anchor=\"end\" class=\"sub\"><tspan fill=\"${hex(LIME)}\" font-weight=\"700\">${running}</tspan> running · <tspan fill=\"${hex(GREEN)}\" font-weight=\"700\">${done}</tspan> done · ${live.files.length || live.main.context.length} context files</text>`)\n\n  // The orbit: a slow, flowing dashed ring.\n  out.push(`<ellipse cx=\"${CX}\" cy=\"${CY}\" rx=\"${RX}\" ry=\"${RY}\" fill=\"none\" stroke=\"#1F3D66\" stroke-width=\"1.2\" stroke-dasharray=\"2 7\"><animate attributeName=\"stroke-dashoffset\" from=\"0\" to=\"-90\" dur=\"6s\" begin=\"${phase(now, 6000)}\" repeatCount=\"indefinite\"/></ellipse>`)\n\n  // The chat: where the person types, and where the mod talks back.\n  const chat = { x: 70, y: CY }\n  const lastIn = [...live.events].reverse().find(e => e.text.startsWith('You give Main'))\n  const lastOut = [...live.events].reverse().find(e => e.text.startsWith('The mod sends'))\n  out.push(`<g><title>The chat: you give Main a task here, and the mod sends its debrief here.</title>\n    <rect x=\"${chat.x - 46}\" y=\"${chat.y - 22}\" width=\"92\" height=\"44\" rx=\"12\" fill=\"#0F1F38\" stroke=\"#FFFFFF\" stroke-opacity=\"0.12\"/>\n    <text x=\"${chat.x}\" y=\"${chat.y - 2}\" text-anchor=\"middle\" class=\"label\">CHAT</text>\n    <text x=\"${chat.x}\" y=\"${chat.y + 13}\" text-anchor=\"middle\" class=\"sub\">you + Claude</text></g>`)\n  out.push(`<path id=\"chatline\" d=\"M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}\" stroke=\"#1F3D66\" stroke-width=\"1\" stroke-dasharray=\"3 5\" fill=\"none\"/>`)\n  for (const [event, color, reverse] of [[lastIn, LIME, false], [lastOut, LIME, true]] as const) {\n    if (!event || now - event.at > 2200) continue\n    const path = reverse ? `M ${CX - 30} ${CY} L ${chat.x + 46} ${chat.y}` : `M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}`\n    out.push(`<circle r=\"6\" fill=\"${hex(color)}\" filter=\"url(#glow)\" opacity=\"0\"><animateMotion path=\"${path}\" dur=\"1.4s\" begin=\"-${(now - event.at) / 1000}s\" fill=\"freeze\"/><animate attributeName=\"opacity\" values=\"0;1;1;0\" dur=\"1.4s\" begin=\"-${(now - event.at) / 1000}s\" fill=\"freeze\"/></circle>`)\n  }\n\n  // Beams from the core to each agent: flowing while it runs, faint when it is done.\n  for (const agent of live.agents) {\n    const p = spot(agent, live.agents.length)\n    const isDone = agent.endedAt !== undefined\n    const c = hex(isDone ? GREEN : agent.color)\n    out.push(`<line x1=\"${CX}\" y1=\"${CY}\" x2=\"${p.x}\" y2=\"${p.y}\" stroke=\"${c}\" stroke-opacity=\"${isDone ? 0.18 : 0.55}\" stroke-width=\"${isDone ? 1 : 1.6}\" stroke-dasharray=\"${isDone ? '0' : '4 10'}\">${isDone ? '' : `<animate attributeName=\"stroke-dashoffset\" from=\"0\" to=\"-28\" dur=\"0.9s\" begin=\"${phase(now, 900)}\" repeatCount=\"indefinite\"/>`}</line>`)\n  }\n\n  // The core: the main session, with rings that pulse outward.\n  for (let k = 0; k < 3; k++) {\n    out.push(`<circle cx=\"${CX}\" cy=\"${CY}\" r=\"26\" fill=\"none\" stroke=\"${hex(LIME)}\" stroke-width=\"1.5\"><animate attributeName=\"r\" values=\"26;62\" dur=\"2.4s\" begin=\"${phase(now, 2400, k * 800)}\" repeatCount=\"indefinite\"/><animate attributeName=\"opacity\" values=\"0.7;0\" dur=\"2.4s\" begin=\"${phase(now, 2400, k * 800)}\" repeatCount=\"indefinite\"/></circle>`)\n  }\n  const mainCtx = (live.files.length > 0 ? live.files : live.main.context).slice(0, 3)\n  out.push(`<g><title>Main session. Context it carries: ${esc(mainCtx.join(', ') || 'none seen yet')}. Reads ${live.main.reads}, actions ${live.main.acts}.</title>\n    <circle cx=\"${CX}\" cy=\"${CY}\" r=\"34\" fill=\"url(#core)\" opacity=\"0.55\" filter=\"url(#soft)\"/>\n    <circle cx=\"${CX}\" cy=\"${CY}\" r=\"20\" fill=\"${hex(LIME)}\" filter=\"url(#glow)\"><animate attributeName=\"r\" values=\"19;22;19\" dur=\"1.6s\" begin=\"${phase(now, 1600)}\" repeatCount=\"indefinite\"/></circle>\n    <text x=\"${CX}\" y=\"${CY + 4}\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"700\" fill=\"#1C2B3A\">MAIN</text></g>`)\n  mainCtx.forEach((file, i) => {\n    out.push(`<text x=\"${CX}\" y=\"${CY + 54 + i * 14}\" text-anchor=\"middle\" class=\"chip\" fill-opacity=\"0.7\">◇ ${esc(cut(file, 26))}</text>`)\n  })\n\n  // Particles: a task flies out, a file flies in, an action reports back.\n  for (const particle of live.particles.filter(p => now - p.at < 1600)) {\n    const agent = live.agents.find(a => a.id === particle.agentId)\n    if (!agent) continue\n    const p = spot(agent, live.agents.length)\n    const ago = `-${(now - particle.at) / 1000}s`\n    let path: string\n    let color: number\n    if (particle.kind === 'read') {\n      const a = ((particle.seed % 360) * Math.PI) / 180\n      path = `M ${CX + RX * 1.6 * Math.cos(a)} ${CY + RY * 1.6 * Math.sin(a)} L ${p.x} ${p.y}`\n      color = CYAN\n    } else if (particle.kind === 'spawn') {\n      path = `M ${CX} ${CY} L ${p.x} ${p.y}`\n      color = LIME\n    } else {\n      path = `M ${p.x} ${p.y} L ${CX} ${CY}`\n      color = AMBER\n    }\n    out.push(`<g opacity=\"0\"><animateMotion path=\"${path}\" dur=\"1.2s\" begin=\"${ago}\" fill=\"freeze\"/><animate attributeName=\"opacity\" values=\"0;1;1;0\" dur=\"1.2s\" begin=\"${ago}\" fill=\"freeze\"/>\n      <rect x=\"-5\" y=\"-5\" width=\"10\" height=\"10\" transform=\"rotate(45)\" fill=\"${hex(color)}\" filter=\"url(#glow)\"/>\n      ${particle.kind === 'read' ? `<text y=\"-12\" text-anchor=\"middle\" class=\"chip\" fill=\"${hex(CYAN)}\">${esc(cut(particle.label, 22))}</text>` : ''}</g>`)\n  }\n\n  // The agents: a glowing node, a spinning ring while it runs, its files as chips.\n  for (const agent of live.agents) {\n    const p = spot(agent, live.agents.length)\n    const isDone = agent.endedAt !== undefined\n    const c = hex(isDone ? GREEN : agent.color)\n    const secs = Math.round(((agent.endedAt ?? now) - agent.startedAt) / 1000)\n    const last = agent.steps.slice(-4).map(s => s.what).join(' · ')\n    const below = p.y >= CY - 10\n    const files = agent.context.slice(-3)\n    // Below the core the text hangs under the node; above it, it stacks upward.\n    const ty = below ? p.y + 34 : p.y - 34 - files.length * 13\n    out.push(`<g class=\"agent\"><title>${esc(agent.name)} (${esc(shortModel(agent.model))})\nTask: ${esc(agent.task || '–')}\nRead ${agent.reads} · acted ${agent.acts} · ${secs}s\nContext: ${esc(agent.context.join(', ') || 'none yet')}\nLast: ${esc(last || '–')}</title>\n      <circle class=\"halo\" cx=\"${p.x}\" cy=\"${p.y}\" r=\"30\" fill=\"${c}\" opacity=\"0.18\" filter=\"url(#soft)\"/>\n      ${isDone ? '' : `<circle cx=\"${p.x}\" cy=\"${p.y}\" r=\"21\" fill=\"none\" stroke=\"${c}\" stroke-width=\"2\" stroke-dasharray=\"22 110\" stroke-linecap=\"round\"><animateTransform attributeName=\"transform\" type=\"rotate\" from=\"0 ${p.x} ${p.y}\" to=\"360 ${p.x} ${p.y}\" dur=\"1.1s\" begin=\"${phase(now, 1100, agent.slot * 300)}\" repeatCount=\"indefinite\"/></circle>`}\n      <circle cx=\"${p.x}\" cy=\"${p.y}\" r=\"13\" fill=\"${c}\" filter=\"url(#glow)\">${isDone ? '' : `<animate attributeName=\"opacity\" values=\"0.75;1;0.75\" dur=\"1.3s\" begin=\"${phase(now, 1300, agent.slot * 400)}\" repeatCount=\"indefinite\"/>`}</circle>\n      ${isDone ? `<path d=\"M ${p.x - 5} ${p.y} l 3.5 4 l 7 -8\" stroke=\"#1C2B3A\" stroke-width=\"2.4\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>` : ''}\n      <text x=\"${p.x}\" y=\"${ty}\" text-anchor=\"middle\" class=\"label\">${esc(cut(agent.name, 18))}</text>\n      <text x=\"${p.x}\" y=\"${ty + 15}\" text-anchor=\"middle\" class=\"sub\">${esc(shortModel(agent.model))} · ${isDone ? `done in ${secs}s` : `${agent.reads} reads · ${agent.acts} acts`}</text>`)\n    files.forEach((file, i) => {\n      out.push(`<text x=\"${p.x}\" y=\"${ty + 31 + i * 13}\" text-anchor=\"middle\" class=\"chip\" fill=\"${c}\" fill-opacity=\"${isDone ? 0.5 : 0.85}\">◇ ${esc(cut(file, 24))}</text>`)\n    })\n    out.push(`</g>`)\n  }\n\n  // The caption bar: the newest event typed out, and the two before it.\n  out.push(`<rect x=\"16\" y=\"${VH - 104}\" width=\"${VW - 32}\" height=\"88\" rx=\"12\" fill=\"#0F1F38\" stroke=\"#FFFFFF\" stroke-opacity=\"0.12\"/>`)\n  const newest = live.events[live.events.length - 1]\n  if (newest) {\n    const fresh = Math.max(0, now - newest.at)\n    const text = cut(newest.text, 90)\n    const typed = Math.min(1, fresh / (text.length * 18))\n    out.push(`<clipPath id=\"type\"><rect x=\"40\" y=\"${VH - 94}\" height=\"28\" width=\"${typed * 680}\"><animate attributeName=\"width\" to=\"680\" dur=\"${Math.max(0.01, (1 - typed) * text.length * 0.018)}s\" fill=\"freeze\"/></rect></clipPath>`)\n    out.push(`<circle cx=\"30\" cy=\"${VH - 79}\" r=\"5\" fill=\"${hex(newest.color)}\" filter=\"url(#glow)\"><animate attributeName=\"opacity\" values=\"1;0.3;1\" dur=\"1s\" repeatCount=\"indefinite\"/></circle>`)\n    out.push(`<text x=\"42\" y=\"${VH - 74}\" font-size=\"15\" font-weight=\"700\" fill=\"#EAF1F8\" clip-path=\"url(#type)\">${esc(text)}</text>`)\n  } else {\n    out.push(`<text x=\"30\" y=\"${VH - 74}\" font-size=\"14\" fill=\"#9FB3C8\">Waiting for a prompt. Give Claude a task with agents.</text>`)\n  }\n  live.events\n    .slice(-3, -1)\n    .reverse()\n    .forEach((event, i) => {\n      const s = Math.max(0, Math.round((now - event.at) / 1000))\n      out.push(`<text x=\"42\" y=\"${VH - 50 + i * 18}\" font-size=\"12\" fill=\"${hex(event.color)}\" fill-opacity=\"${0.75 - i * 0.25}\"><tspan fill=\"#9FB3C8\" fill-opacity=\"0.7\" font-family=\"Space Mono, monospace\">${s}s ago  </tspan>${esc(cut(event.text, 96))}</text>`)\n    })\n\n  out.push(`</svg>`)\n  return out.join('\\n')\n}\n"};</script>
 <script type="module">// ../mods/agent-orbit/hooks/live.ts
 var MAIN = "main";
-var LIME = 13041469;
-var CYAN = 6217983;
-var AMBER = 16762967;
-var GREEN = 7208872;
-var PALETTE = [6217983, 16743129, 16762967, 10325247, 7208872, 16748382, 8042751];
+var LIME = 14614195;
+var CYAN = 10736383;
+var AMBER = 14992766;
+var GREEN = 8374170;
+var PALETTE = [9420004, 15241103, 13936202, 13096162, 8374170, 10736383, 14992766];
 function newLive(now) {
   return {
     main: blankAgent(MAIN, "main session", now, -1, LIME),
     agents: [],
     particles: [],
     events: [],
+    chat: [],
     files: [],
     skills: []
   };
@@ -424,17 +448,17 @@ function drawSvg(live, now) {
   const out = [];
   const running = live.agents.filter((a) => a.endedAt === undefined).length;
   const done = live.agents.length - running;
-  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${VW}" height="${VH}" font-family="ui-sans-serif, -apple-system, 'Inter', sans-serif">`);
+  out.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VW} ${VH}" width="${VW}" height="${VH}" font-family="Montserrat, 'Space Grotesk', ui-sans-serif, sans-serif">`);
   out.push(`<defs>
-    <radialGradient id="sky" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#16213a"/><stop offset="0.6" stop-color="#0b1020"/><stop offset="1" stop-color="#05070d"/></radialGradient>
-    <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#f4ffd0"/><stop offset="0.45" stop-color="${hex(LIME)}"/><stop offset="1" stop-color="${hex(LIME)}" stop-opacity="0"/></radialGradient>
+    <radialGradient id="sky" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#15294A"/><stop offset="0.6" stop-color="#0F1F38"/><stop offset="1" stop-color="#08142A"/></radialGradient>
+    <radialGradient id="core" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#FFF8E7"/><stop offset="0.45" stop-color="${hex(LIME)}"/><stop offset="1" stop-color="${hex(LIME)}" stop-opacity="0"/></radialGradient>
     <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
     <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2"/></filter>
   </defs>
   <style>
-    .label { fill: #e6ebf5; font-size: 13px; font-weight: 600; }
-    .sub { fill: #8b98b3; font-size: 11px; }
-    .chip { fill: #c9d4ea; font-size: 10.5px; font-family: ui-monospace, 'SF Mono', Menlo, monospace; }
+    .label { fill: #EAF1F8; font-size: 13px; font-weight: 700; }
+    .sub { fill: #9FB3C8; font-size: 11px; font-family: 'Space Grotesk', Montserrat, sans-serif; }
+    .chip { fill: #C7D4E2; font-size: 10.5px; font-family: 'Space Mono', ui-monospace, Menlo, monospace; }
     .agent:hover .halo { opacity: 0.55; }
     .agent { cursor: default; }
   </style>`);
@@ -445,11 +469,11 @@ function drawSvg(live, now) {
     const y = (h >>> 11) % 400;
     const r = 0.5 + (h >>> 5) % 10 / 10;
     const dur = 2400 + h % 3000;
-    out.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="#cfe1ff"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="${dur}ms" begin="${phase(now, dur, h % 1000)}" repeatCount="indefinite"/></circle>`);
+    out.push(`<circle cx="${x}" cy="${y}" r="${r}" fill="#C7D4E2"><animate attributeName="opacity" values="0.1;0.8;0.1" dur="${dur}ms" begin="${phase(now, dur, h % 1000)}" repeatCount="indefinite"/></circle>`);
   }
   const legend = [
     [hex(LIME), "main session"],
-    ["#ff7ad9", "agent"],
+    ["#E88F8F", "agent"],
     [hex(CYAN), "reads a file"],
     [hex(AMBER), "acts"],
     [hex(GREEN), "done"]
@@ -460,15 +484,15 @@ function drawSvg(live, now) {
     lx += 22 + label.length * 6.2;
   }
   out.push(`<text x="${VW - 22}" y="28" text-anchor="end" class="sub"><tspan fill="${hex(LIME)}" font-weight="700">${running}</tspan> running · <tspan fill="${hex(GREEN)}" font-weight="700">${done}</tspan> done · ${live.files.length || live.main.context.length} context files</text>`);
-  out.push(`<ellipse cx="${CX}" cy="${CY}" rx="${RX}" ry="${RY}" fill="none" stroke="#2a3b5f" stroke-width="1.2" stroke-dasharray="2 7"><animate attributeName="stroke-dashoffset" from="0" to="-90" dur="6s" begin="${phase(now, 6000)}" repeatCount="indefinite"/></ellipse>`);
+  out.push(`<ellipse cx="${CX}" cy="${CY}" rx="${RX}" ry="${RY}" fill="none" stroke="#1F3D66" stroke-width="1.2" stroke-dasharray="2 7"><animate attributeName="stroke-dashoffset" from="0" to="-90" dur="6s" begin="${phase(now, 6000)}" repeatCount="indefinite"/></ellipse>`);
   const chat = { x: 70, y: CY };
   const lastIn = [...live.events].reverse().find((e) => e.text.startsWith("You give Main"));
   const lastOut = [...live.events].reverse().find((e) => e.text.startsWith("The mod sends"));
   out.push(`<g><title>The chat: you give Main a task here, and the mod sends its debrief here.</title>
-    <rect x="${chat.x - 46}" y="${chat.y - 22}" width="92" height="44" rx="12" fill="#121a2e" stroke="#33466e"/>
+    <rect x="${chat.x - 46}" y="${chat.y - 22}" width="92" height="44" rx="12" fill="#0F1F38" stroke="#FFFFFF" stroke-opacity="0.12"/>
     <text x="${chat.x}" y="${chat.y - 2}" text-anchor="middle" class="label">CHAT</text>
     <text x="${chat.x}" y="${chat.y + 13}" text-anchor="middle" class="sub">you + Claude</text></g>`);
-  out.push(`<path id="chatline" d="M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}" stroke="#2a3b5f" stroke-width="1" stroke-dasharray="3 5" fill="none"/>`);
+  out.push(`<path id="chatline" d="M ${chat.x + 46} ${chat.y} L ${CX - 30} ${CY}" stroke="#1F3D66" stroke-width="1" stroke-dasharray="3 5" fill="none"/>`);
   for (const [event, color, reverse] of [[lastIn, LIME, false], [lastOut, LIME, true]]) {
     if (!event || now - event.at > 2200)
       continue;
@@ -488,7 +512,7 @@ function drawSvg(live, now) {
   out.push(`<g><title>Main session. Context it carries: ${esc(mainCtx.join(", ") || "none seen yet")}. Reads ${live.main.reads}, actions ${live.main.acts}.</title>
     <circle cx="${CX}" cy="${CY}" r="34" fill="url(#core)" opacity="0.55" filter="url(#soft)"/>
     <circle cx="${CX}" cy="${CY}" r="20" fill="${hex(LIME)}" filter="url(#glow)"><animate attributeName="r" values="19;22;19" dur="1.6s" begin="${phase(now, 1600)}" repeatCount="indefinite"/></circle>
-    <text x="${CX}" y="${CY + 4}" text-anchor="middle" font-size="11" font-weight="800" fill="#0b1020">MAIN</text></g>`);
+    <text x="${CX}" y="${CY + 4}" text-anchor="middle" font-size="11" font-weight="700" fill="#1C2B3A">MAIN</text></g>`);
   mainCtx.forEach((file, i) => {
     out.push(`<text x="${CX}" y="${CY + 54 + i * 14}" text-anchor="middle" class="chip" fill-opacity="0.7">◇ ${esc(cut(file, 26))}</text>`);
   });
@@ -532,7 +556,7 @@ Last: ${esc(last || "–")}</title>
       <circle class="halo" cx="${p.x}" cy="${p.y}" r="30" fill="${c}" opacity="0.18" filter="url(#soft)"/>
       ${isDone ? "" : `<circle cx="${p.x}" cy="${p.y}" r="21" fill="none" stroke="${c}" stroke-width="2" stroke-dasharray="22 110" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 ${p.x} ${p.y}" to="360 ${p.x} ${p.y}" dur="1.1s" begin="${phase(now, 1100, agent.slot * 300)}" repeatCount="indefinite"/></circle>`}
       <circle cx="${p.x}" cy="${p.y}" r="13" fill="${c}" filter="url(#glow)">${isDone ? "" : `<animate attributeName="opacity" values="0.75;1;0.75" dur="1.3s" begin="${phase(now, 1300, agent.slot * 400)}" repeatCount="indefinite"/>`}</circle>
-      ${isDone ? `<path d="M ${p.x - 5} ${p.y} l 3.5 4 l 7 -8" stroke="#0b1020" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
+      ${isDone ? `<path d="M ${p.x - 5} ${p.y} l 3.5 4 l 7 -8" stroke="#1C2B3A" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>` : ""}
       <text x="${p.x}" y="${ty}" text-anchor="middle" class="label">${esc(cut(agent.name, 18))}</text>
       <text x="${p.x}" y="${ty + 15}" text-anchor="middle" class="sub">${esc(shortModel(agent.model))} · ${isDone ? `done in ${secs}s` : `${agent.reads} reads · ${agent.acts} acts`}</text>`);
     files.forEach((file, i) => {
@@ -540,7 +564,7 @@ Last: ${esc(last || "–")}</title>
     });
     out.push(`</g>`);
   }
-  out.push(`<rect x="16" y="${VH - 104}" width="${VW - 32}" height="88" rx="12" fill="#0e1528" stroke="#22304f"/>`);
+  out.push(`<rect x="16" y="${VH - 104}" width="${VW - 32}" height="88" rx="12" fill="#0F1F38" stroke="#FFFFFF" stroke-opacity="0.12"/>`);
   const newest = live.events[live.events.length - 1];
   if (newest) {
     const fresh = Math.max(0, now - newest.at);
@@ -548,13 +572,13 @@ Last: ${esc(last || "–")}</title>
     const typed = Math.min(1, fresh / (text.length * 18));
     out.push(`<clipPath id="type"><rect x="40" y="${VH - 94}" height="28" width="${typed * 680}"><animate attributeName="width" to="680" dur="${Math.max(0.01, (1 - typed) * text.length * 0.018)}s" fill="freeze"/></rect></clipPath>`);
     out.push(`<circle cx="30" cy="${VH - 79}" r="5" fill="${hex(newest.color)}" filter="url(#glow)"><animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/></circle>`);
-    out.push(`<text x="42" y="${VH - 74}" font-size="15" font-weight="600" fill="#f2f5fb" clip-path="url(#type)">${esc(text)}</text>`);
+    out.push(`<text x="42" y="${VH - 74}" font-size="15" font-weight="700" fill="#EAF1F8" clip-path="url(#type)">${esc(text)}</text>`);
   } else {
-    out.push(`<text x="30" y="${VH - 74}" font-size="14" fill="#8b98b3">Waiting for a prompt. Give Claude a task with agents.</text>`);
+    out.push(`<text x="30" y="${VH - 74}" font-size="14" fill="#9FB3C8">Waiting for a prompt. Give Claude a task with agents.</text>`);
   }
   live.events.slice(-3, -1).reverse().forEach((event, i) => {
     const s = Math.max(0, Math.round((now - event.at) / 1000));
-    out.push(`<text x="42" y="${VH - 50 + i * 18}" font-size="12" fill="${hex(event.color)}" fill-opacity="${0.75 - i * 0.25}"><tspan fill="#5b6785">${s}s ago  </tspan>${esc(cut(event.text, 96))}</text>`);
+    out.push(`<text x="42" y="${VH - 50 + i * 18}" font-size="12" fill="${hex(event.color)}" fill-opacity="${0.75 - i * 0.25}"><tspan fill="#9FB3C8" fill-opacity="0.7" font-family="Space Mono, monospace">${s}s ago  </tspan>${esc(cut(event.text, 96))}</text>`);
   });
   out.push(`</svg>`);
   return out.join(`
@@ -564,10 +588,10 @@ Last: ${esc(last || "–")}</title>
 // ../mods/agent-orbit/hooks/frame.ts
 var DEFAULT = 16777216;
 var SPIN = "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏";
-var DIM = 4871528;
-var FAINT = 2962496;
-var TEXT = 14212841;
-var MUTED = 8952234;
+var DIM = 4609898;
+var FAINT = 2047334;
+var TEXT = 15397368;
+var MUTED = 10466248;
 function scale(color, k) {
   const r = Math.min(255, Math.round((color >> 16 & 255) * k));
   const g = Math.min(255, Math.round((color >> 8 & 255) * k));
@@ -641,7 +665,7 @@ function drawFrame(live, columns, rows, now) {
   const ry = Math.max(2, skyH * 0.34);
   const legend = [
     ["◉", LIME, "main session"],
-    ["●", 16743129, "agent"],
+    ["●", 15241103, "agent"],
     ["◆", CYAN, "reads a file"],
     ["◆", AMBER, "acts"],
     ["★", LIME, "task out"],
@@ -659,7 +683,7 @@ function drawFrame(live, columns, rows, now) {
   for (let s = 0;s < Math.floor(W * skyH / 50); s++) {
     const h = hash(`star${s}`);
     const glow = 0.5 + 0.5 * Math.sin(now / 900 + h % 628 / 100);
-    put(h % W, top + (h >>> 12) % skyH, glow > 0.85 ? "+" : "·", scale(8952234, 0.2 + 0.4 * glow));
+    put(h % W, top + (h >>> 12) % skyH, glow > 0.85 ? "+" : "·", scale(13096162, 0.2 + 0.4 * glow));
   }
   for (let a = 0;a < 360; a += 5) {
     const t = a * Math.PI / 180;
@@ -817,16 +841,17 @@ if (typeof U8.toBase64 !== "function") {
   });
 }
 var READS = new Set(["Read", "Grep", "Glob", "WebFetch", "WebSearch", "Skill", "LS"]);
-var ROOT = "/Users/you/practice-repo/";
+var ROOT = "/Users/you/agent-orbit-class/";
+var HOOKS = "mods/agent-orbit/hooks/";
 function whatOf(input, tool) {
   const value = ["file_path", "pattern", "url", "query", "skill", "command", "description"].map((key) => input[key]).find((v) => typeof v === "string");
   return String(value ?? tool);
 }
-var PROMPT = "Use three Explore agents in parallel on the haiku model. One reads PROBLEMS.md, one reads SUGGESTIONS.md, one reads PARKING.md. Each returns the top 3 themes, one line each. Do not change any file.";
+var PROMPT = "Use three Explore agents in parallel on the haiku model. One reads mods/agent-orbit/hooks/register.tsx, one reads mods/agent-orbit/hooks/frame.ts, one reads mods/agent-orbit/hooks/desktop.ts. Each explains in 3 lines what its file does. Do not change any file.";
 var DEBRIEF = [
-  "Explore 1 read the most (3 files) and found speed and browser bugs: a slow login on a phone, an export that fails in Safari.",
-  "Explore 2 found one theme in SUGGESTIONS.md: trust in the data. Show the last sync time in the header.",
-  "Explore 3 found look and feel in PARKING.md: a dark theme for the dashboard and a bigger font."
+  "Explore 1 read the most (3 files): register.tsx holds the hooks that fill the live model, open the pane and send this debrief.",
+  "Explore 2: frame.ts draws one frame of the orbit as terminal cells, 16 times a second, from that same model.",
+  "Explore 3: desktop.ts draws the same model as one SVG, with SMIL motion that a redraw continues."
 ];
 var LENGTH = 23;
 
@@ -849,20 +874,20 @@ class Run {
       { at: 0.4, run: () => this.promptSubmit() },
       { at: 1, run: () => this.promptContext([{ kind: "project", path: `${ROOT}CLAUDE.md` }, { kind: "user", path: "/Users/you/.claude/CLAUDE.md" }]) },
       { at: 1.7, run: () => this.toolCall(undefined, "Glob", { pattern: "*.md" }) },
-      { at: 2.3, run: () => this.agentSpawn(ids[0], "Explore", "Themes in PROBLEMS.md") },
-      { at: 2.7, run: () => this.agentSpawn(ids[1], "Explore", "Themes in SUGGESTIONS.md") },
-      { at: 3.1, run: () => this.agentSpawn(ids[2], "Explore", "Themes in PARKING.md") },
-      { at: 3.8, run: read(ids[0], "PROBLEMS.md") },
-      { at: 4.4, run: read(ids[1], "SUGGESTIONS.md") },
-      { at: 5, run: read(ids[2], "PARKING.md") },
-      { at: 5.9, run: read(ids[0], "CLAUDE.md") },
-      { at: 6.6, run: bash(ids[2], 'grep -c "^- " PARKING.md') },
-      { at: 7.3, run: read(ids[1], "PROBLEMS.md") },
-      { at: 8, run: bash(ids[0], "wc -l PROBLEMS.md") },
-      { at: 8.8, run: read(ids[2], "SUGGESTIONS.md") },
+      { at: 2.3, run: () => this.agentSpawn(ids[0], "Explore", "Explain register.tsx") },
+      { at: 2.7, run: () => this.agentSpawn(ids[1], "Explore", "Explain frame.ts") },
+      { at: 3.1, run: () => this.agentSpawn(ids[2], "Explore", "Explain desktop.ts") },
+      { at: 3.8, run: read(ids[0], HOOKS + "register.tsx") },
+      { at: 4.4, run: read(ids[1], HOOKS + "frame.ts") },
+      { at: 5, run: read(ids[2], HOOKS + "desktop.ts") },
+      { at: 5.9, run: read(ids[0], HOOKS + "live.ts") },
+      { at: 6.6, run: bash(ids[2], 'grep -c "<animate" desktop.ts') },
+      { at: 7.3, run: read(ids[1], HOOKS + "live.ts") },
+      { at: 8, run: bash(ids[0], "wc -l register.tsx") },
+      { at: 8.8, run: read(ids[2], "CLAUDE.md") },
       { at: 9.7, run: () => this.turnComplete(ids[1]) },
-      { at: 10.4, run: read(ids[0], "FLOW.md") },
-      { at: 11.4, run: bash(ids[2], "wc -l PARKING.md") },
+      { at: 10.4, run: read(ids[0], "CLAUDE.md") },
+      { at: 11.4, run: bash(ids[2], "wc -l desktop.ts") },
       { at: 12.2, run: () => this.turnComplete(ids[0]) },
       { at: 14, run: () => this.turnComplete(ids[2]) },
       { at: 16.2, run: () => this.claudeAnswers() }
@@ -976,7 +1001,7 @@ class Run {
     else
       this.chat.push({
         kind: "claude",
-        text: "The three agents are done. Top themes: speed and browser bugs, trust in the data, look and feel.",
+        text: "The three agents are done. register.tsx fills the model, frame.ts draws it as cells, desktop.ts draws it as SVG.",
         at: Date.now()
       });
   }
@@ -1025,10 +1050,10 @@ const STEPS = [
     short: 'A pane', title: 'A pane', mode: 'hello',
     adds: ['Three files make a mod. Claude Code calls the register function in it.', 'A command and a prompt open a pane. A render hook draws in that pane.'],
     blocks: [
-      { file: 'plugin.json', path: '.claude-plugin/plugin.json', lines: [[1, 2], [6, 8]], pair: true },
-      { file: 'hooks.json', path: 'hooks/hooks.json', lines: [[1, 1]], pair: true },
-      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[44, 46], [72, 74], [77, 78]],
-        hl: { 46: 'Registers /orbit. Never give a command the name of a built-in.', 74: 'Opens the pane from a prompt. Then it opens at any terminal width.' } },
+      { file: 'plugin.json', path: '.claude-plugin/plugin.json', anchors: [['"name"', 1], ['"license"', 2]], pair: true },
+      { file: 'hooks.json', path: 'hooks/hooks.json', anchors: [['"modules"', 1]], pair: true },
+      { file: 'register.tsx', path: 'hooks/register.tsx', anchors: [['export const register: Register', 2], ['$.command.register', 1], ["on('prompt.submit'", 2], ['return next(e)', 1]],
+        hl: { '$.command.register': 'Registers /orbit. Never give a command the name of a built-in.', "$.ui.open({ id: PANE, title: 'Agent orbit' }).catch": 'Opens the pane from a prompt. Then it opens at any terminal width.' } },
       { text: STEP1_RENDER, path: 'hooks/register.tsx', tag: 'step 1 version', hlRel: { 1: 'Draws the pane with the id agent-orbit: the words "Hello, orbit".' } },
     ],
     see: 'You give Claude a task. The pane opens on the right and says "Hello, orbit".',
@@ -1037,9 +1062,9 @@ const STEPS = [
     short: 'Track the agents', title: 'Track the agents', mode: 'rows',
     adds: ['A plain model in the module holds the main session and one entry per agent.', 'Four hooks fill it: agent.spawn, tool.call, turn.complete and prompt.context.'],
     blocks: [
-      { file: 'live.ts', path: 'hooks/live.ts', lines: [[33, 35], [37, 37], [40, 40]] },
-      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[11, 11], [81, 82], [95, 96], [102, 103], [113, 114], [116, 116], [138, 140]],
-        hl: { 96: 'Call next(e) first. Its result holds the new agentId and the model.', 114: 'e.agentId names the agent that made the call. No id means Main.', 116: 'Read, Grep, Glob and Skill are reads: context. Every other tool is an action.' } },
+      { file: 'live.ts', path: 'hooks/live.ts', anchors: [['export type Live = {', 3]] },
+      { file: 'register.tsx', path: 'hooks/register.tsx', anchors: [['const READS', 1], ["on('prompt.context'", 1], ["on('agent.spawn'", 2], ['agent.model = shortModel', 1], ["on('tool.call'", 2], ['const step: Step', 1], ["on('turn.complete'", 1], ['if (e.agentId) {', 1]],
+        hl: { 'await next(e)': 'Call next(e) first. Its result holds the new agentId and the model.', 'loopOf(e.agentId)': 'e.agentId names the agent that made the call. No id means Main.', 'READS.has(e.tool)': 'Read, Grep, Glob and Skill are reads: context. Every other tool is an action.' } },
     ],
     see: 'Text rows fill while the run goes: who runs, how much it read, what it did last.',
   },
@@ -1047,9 +1072,9 @@ const STEPS = [
     short: 'Make it move', title: 'Make it move', mode: 'bare',
     adds: ['One Raster replaces the text: a grid of coloured terminal cells.', 'A clock paints a new frame about 16 times a second with $.ui.blit.'],
     blocks: [
-      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[50, 55], [174, 178]],
-        hl: { 50: 'Paints a new frame every 60 ms: about 16 frames a second.', 54: 'blit sends the cells. It must use the size of the mounted Raster.', 176: 'Sizes the Raster from the pane, so it fits a short, narrow dock.' } },
-      { file: 'frame.ts', path: 'hooks/frame.ts', lines: [[52, 52], [127, 132], [274, 274]] },
+      { file: 'register.tsx', path: 'hooks/register.tsx', anchors: [['$.clock.every(60', 6], ['const { Raster }', 5]],
+        hl: { '$.clock.every(60': 'Paints a new frame every 60 ms: about 16 frames a second.', '$.ui.blit(': 'blit sends the cells. It must use the size of the mounted Raster.', 'e.props.scroll.bodyRows': 'Sizes the Raster from the pane, so it fits a short, narrow dock.' } },
+      { file: 'frame.ts', path: 'hooks/frame.ts', anchors: [['export function drawFrame', 1], ['const where = ', 4], ['toBase64()', 1]] },
     ],
     see: 'Main pulses in the centre. Each agent orbits it, with a trail and a beam while it runs.',
   },
@@ -1057,10 +1082,10 @@ const STEPS = [
     short: 'Make it explain', title: 'Make it explain', mode: 'raster',
     adds: ['Each hook writes one plain sentence with say and verbOf.', 'The frame adds a legend, a typed caption, a ticker and ◇ file chips.'],
     blocks: [
-      { file: 'live.ts', path: 'hooks/live.ts', lines: [[79, 81], [99, 103]] },
-      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[120, 121], [123, 123]],
-        hl: { 121: 'Keeps the last 4 files that the agent read: its context.', 123: 'Each tool call becomes one plain sentence for the caption.' } },
-      { file: 'frame.ts', path: 'hooks/frame.ts', lines: [[215, 218]], hl: { 217: 'Types the caption out: one more letter every 12 ms.' } },
+      { file: 'live.ts', path: 'hooks/live.ts', anchors: [['export function say', 3], ['export function verbOf', 5]] },
+      { file: 'register.tsx', path: 'hooks/register.tsx', anchors: [['const file = baseName(what)', 2], ['${agent.name} ${step.what}', 1]],
+        hl: { 'agent.context = [': 'Keeps the last 4 files that the agent read: its context.', '${agent.name} ${step.what}': 'Each tool call becomes one plain sentence for the caption.' } },
+      { file: 'frame.ts', path: 'hooks/frame.ts', anchors: [['const newest = live.events', 4]], hl: { 'const shown': 'Types the caption out: one more letter every 12 ms.' } },
     ],
     see: 'The caption tells each event in plain words. The ◇ chips show what each agent read.',
   },
@@ -1068,8 +1093,8 @@ const STEPS = [
     short: 'Talk back', title: 'Talk back', mode: 'raster', talkBack: true,
     adds: ['When the last agent of a wave ends, the mod sends a prompt to the chat.', 'A set of reported agents makes sure that it fires once per wave.'],
     blocks: [
-      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[148, 166]],
-        hl: { 150: 'Fires only when every agent of this wave has ended.', 151: 'Remembers the reported agents, so the next wave starts clean.', 158: '$.prompt.submit puts the prompt in the chat: the mod talks back.' } },
+      { file: 'register.tsx', path: 'hooks/register.tsx', anchors: [['// The mod talks back', 19]],
+        hl: { 'wave.every(a => a.endedAt': 'Fires only when every agent of this wave has ended.', 'reported.add(a.id)': 'Remembers the reported agents, so the next wave starts clean.', '.submit({': '$.prompt.submit puts the prompt in the chat: the mod talks back.' } },
     ],
     see: 'The plugin message lands in the chat. Claude answers it with a short debrief.',
   },
@@ -1077,10 +1102,10 @@ const STEPS = [
     short: 'The desktop view', title: 'The desktop view', mode: 'svg', talkBack: true,
     adds: ['The desktop app has no Raster. The same model draws as one SVG.', 'SMIL animates it. A negative begin keeps the motion smooth on each redraw.'],
     blocks: [
-      { file: 'desktop.ts', path: 'hooks/desktop.ts', lines: [[25, 27], [108, 110]],
-        hl: { 26: 'Starts each animation at its phase now, so a redraw does not jump.' } },
-      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[57, 61], [182, 187]],
-        hl: { 58: 'Draws the SVG again every 2 s while agents run.', 187: 'isInteractive turns on SMIL animation and hover tooltips.' } },
+      { file: 'desktop.ts', path: 'hooks/desktop.ts', anchors: [['function phase(now', 3], ['for (let k = 0; k < 3', 3]],
+        hl: { 'return `-${': 'Starts each animation at its phase now, so a redraw does not jump.' } },
+      { file: 'register.tsx', path: 'hooks/register.tsx', anchors: [['if (vectorShown && busy', 4], ["if (e.surface === 'desktop')", 6]],
+        hl: { 'now - lastRedraw > 2000': 'Draws the SVG again every 2 s while agents run.', 'isInteractive={true}': 'isInteractive turns on SMIL animation and hover tooltips.' } },
     ],
     see: 'The orbit in the desktop app: glowing nodes, flowing beams. Hover an agent for its task.',
   },
@@ -1112,6 +1137,7 @@ function colour(line, json) {
   return out + esc(line.slice(last))
 }
 
+const missing = (window.__missingAnchors = [])
 function codeHtml(step) {
   let mark = 0
   const notes = []
@@ -1126,13 +1152,27 @@ function codeHtml(step) {
       })
     } else {
       const all = S[b.file].split('\n')
+      // Each range is [a unique piece of the first line, how many lines]; the search
+      // goes on after the range before it, so an edit to the mod keeps the excerpt right.
+      let from0 = 0
+      const ranges = []
+      for (const [anchor, count] of b.anchors || []) {
+        const at = all.findIndex((l, i) => i >= from0 && l.includes(anchor))
+        if (at < 0) { missing.push(`${b.file}: ${anchor}`); continue }
+        ranges.push([at + 1, at + count])
+        from0 = at + count
+      }
+      b.lines = ranges
+      const used = new Set()
       // Dedent the excerpt by its smallest indent, so the code gets the width.
       const picked = b.lines.flatMap(([f, t]) => all.slice(f - 1, t)).filter(l => l.trim())
       const cut = Math.min(...picked.map(l => l.match(/^ */)[0].length))
       b.lines.forEach(([from, to], k) => {
         if (k > 0) rows.push(`<div class="gap">⋯</div>`)
         for (let n = from; n <= to; n++) {
-          const note = b.hl && b.hl[n]
+          const hit = b.hl && Object.entries(b.hl).find(([k]) => !used.has(k) && (all[n - 1] ?? '').includes(k))
+          if (hit) used.add(hit[0])
+          const note = hit?.[1]
           if (note) notes.push(note)
           rows.push(`<div class="ln${note ? ' hl' : ''}"><span class="no">${n}</span><span class="mk">${note ? ++mark : ''}</span><span class="src">${colour((all[n - 1] ?? '').slice(cut), isJson) || ' '}</span></div>`)
         }
@@ -1158,11 +1198,11 @@ function renderPanel(i) {
   const step = STEPS[i]
   const { html, notes } = codeHtml(step)
   panel.innerHTML = `<div class="pin${panelMounted ? ' enter' : ''}">
-    <div class="phead"><span class="num">${i}</span><div><div class="of">Step ${i} of 6</div><h2>${step.title}</h2></div></div>
+    <div class="phead"><span class="num">${i}</span><div><div class="eyebrow">Step ${i} of 6</div><h2>${step.title}</h2></div></div>
     <p class="adds">${step.adds.map(esc).join('<br>')}</p>
     <div class="code" id="code">${html}</div>
     <ol class="notes">${notes.map((n, k) => `<li><b>${k + 1}</b><span>${esc(n)}</span></li>`).join('')}</ol>
-    <div class="see"><span>What you see</span><div>${esc(step.see)}</div></div>
+    <div class="see"><span class="eyebrow">What you see</span><div>${esc(step.see)}</div></div>
   </div>`
   panelMounted = true
   fitCode()
@@ -1172,11 +1212,10 @@ let panelMounted = false
 function fitCode() {
   const code = document.getElementById('code')
   if (!code) return
-  let fs = Math.min(16, Math.max(12, innerHeight / 62))
-  code.style.setProperty('--fs', fs + 'px')
-  while (fs > 11 && code.scrollHeight > code.clientHeight + 1) {
-    fs -= 0.25
+  // Only sizes from the type ladder: 16, 14, 12.
+  for (const fs of innerHeight >= 1000 ? [16, 14, 12] : [14, 12]) {
     code.style.setProperty('--fs', fs + 'px')
+    if (code.scrollHeight <= code.clientHeight + 1) break
   }
 }
 
@@ -1202,12 +1241,12 @@ let step = 0
 let run = null
 let view = null // the elements the loop paints into
 
-const chatHead = `<div class="head"><b>✻</b> Claude Code · ~/practice-repo<br>--plugin-dir ../mods/agent-orbit</div>`
+const chatHead = `<div class="head"><b>✻</b> Claude Code · ~/agent-orbit-class<br>--plugin-dir mods/agent-orbit</div>`
 
 function windowHtml(kind, paneInner) {
   const desk = kind === 'desk'
   return `<div class="view enter"><div class="win ${desk ? 'desk' : 'term'}">
-    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="grow">${desk ? 'Claude · practice-repo' : 'practice-repo — claude'}</span></div>
+    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="grow">${desk ? 'Claude · agent-orbit-class' : 'agent-orbit-class — claude'}</span></div>
     <div class="body">
       <div class="chat">${chatHead}<div class="msgs" style="display:flex;flex-direction:column;gap:12px"></div><div class="prompt"><i></i></div></div>
       <div class="pane closed"><div class="pane-title"><b>Agent orbit</b><span class="meta"></span></div><div class="pane-body">${paneInner}</div></div>
@@ -1224,10 +1263,10 @@ function mount(i) {
   if (i === 0) {
     stage.innerHTML = `<div class="view enter introv">
       <div class="svgwrap"></div>
-      <div class="promise"><div class="kicker">A class for Tools4Ever</div>
+      <div class="promise"><div class="eyebrow">A class for Tools4Ever</div>
         <h2>In 6 steps you build this: a live view of what Claude's agents do and read.</h2>
         <p>One mod for the Claude CLI and the desktop app. The page runs the real mod code on a simulated run.</p>
-        <button class="go" id="start">Start with step 1 <span aria-hidden="true">→</span></button></div>
+        <button class="btn primary" id="start">Start with step 1</button></div>
     </div>`
     document.getElementById('start').addEventListener('click', () => go(1))
   } else if (s.mode === 'svg') {
@@ -1252,7 +1291,7 @@ function sizeCanvas() {
   const lh = Math.max(13, Math.min(22, r.height / 35))
   const font = lh / 1.24
   const ctx = view.sharp.getContext('2d')
-  ctx.font = `500 ${font}px 'JetBrains Mono', monospace`
+  ctx.font = `400 ${font}px 'Space Mono', monospace`
   const cw = ctx.measureText('M').width
   const columns = Math.max(20, Math.min(160, Math.floor(r.width / cw)))
   const rows = Math.max(10, Math.min(48, Math.floor(r.height / lh)))
@@ -1282,7 +1321,7 @@ function paintCells(live) {
   const ctx = view.sharp.getContext('2d')
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   ctx.clearRect(0, 0, columns * cw, rows * lh)
-  ctx.font = `500 ${font}px 'JetBrains Mono', monospace`
+  ctx.font = `400 ${font}px 'Space Mono', monospace`
   ctx.textBaseline = 'middle'
   ctx.textAlign = 'center'
   let last = -1
@@ -1291,7 +1330,7 @@ function paintCells(live) {
       const i = (y * columns + x) * 3
       const ch = cells[i]
       if (ch === 0x20) continue
-      const fg = cells[i + 1] === 0x01000000 ? 0xc8d0e0 : cells[i + 1]
+      const fg = cells[i + 1] === 0x01000000 ? 0xeaf1f8 : cells[i + 1]
       if (fg !== last) { ctx.fillStyle = hex(fg); last = fg }
       ctx.fillText(String.fromCodePoint(ch), x * cw + cw / 2, y * lh + lh / 2 + 1)
     }
@@ -1441,6 +1480,7 @@ function select(id, byPerson) {
     lastSvg = 0
   }
   renderChips()
+  renderLiveChat()
 }
 function renderChips() {
   const now = Date.now()
@@ -1507,6 +1547,7 @@ function connect() {
         lastMsg = now
         liveChanged = true
       }
+      renderLiveChat()
       everLive = true
       hint.hidden = true
       if (first) enterLive()
@@ -1542,18 +1583,30 @@ function mountLive() {
   ;[...rail.querySelectorAll('button')].forEach(b => { b.className = ''; b.setAttribute('aria-current', 'false') })
   panel.innerHTML = ''
   const wait = `<div class="wait" hidden>waiting for the session…</div>`
-  stage.innerHTML = liveView === 'svg'
-    ? `<div class="view enter livev"><div class="svgwrap"></div>${wait}</div>`
-    : `<div class="view enter livev"><div class="win term">
+  const orbit = liveView === 'svg'
+    ? `<div class="svgwrap"></div>`
+    : `<div class="win term">
         <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="grow">Agent orbit · the terminal view of the live session</span></div>
         <div class="pane"><div class="pane-title"><b>Agent orbit</b><span class="meta"></span></div><div class="pane-body"><canvas class="cells bloom"></canvas><canvas class="cells sharp"></canvas></div></div>
-      </div>${wait}</div>`
-  stage.querySelector('.livev').insertAdjacentHTML('beforeend', `<form class="ctl" id="ctl" autocomplete="off">
-    <button type="button" class="primary" data-text="${esc(O.PROMPT)}">Run the demo</button>
-    <button type="button" data-text="Give a debrief of the agents that just ran, in at most 4 lines.">Ask for a debrief</button>
-    <input name="free" placeholder="Type a prompt for Claude Code" aria-label="A prompt for Claude Code">
-    <button type="submit">Send</button>
-  </form>`)
+      </div>`
+  stage.innerHTML = `<div class="view enter livev">
+    <div class="lorbit">${orbit}${wait}</div>
+    <aside class="lchat" aria-label="The chat of the selected session">
+      <div class="lhead"><span class="licon"></span><span class="ltitle">Chat</span></div>
+      <div class="lmsgs" id="lmsgs" aria-live="polite"></div>
+      <form class="ctl" id="ctl" autocomplete="off">
+        <div class="ctl-row">
+          <button type="button" class="btn sm primary" data-text="${esc(O.PROMPT)}">Run the demo</button>
+          <button type="button" class="btn sm" data-text="Give a debrief of the agents that just ran, in at most 4 lines.">Ask for a debrief</button>
+        </div>
+        <div class="ctl-row">
+          <input name="free" placeholder="Type a prompt for Claude Code" aria-label="A prompt for Claude Code">
+          <button type="submit" class="btn sm">Send</button>
+        </div>
+      </form>
+    </aside>
+  </div>`
+  chatKeys = []
   const ctl = document.getElementById('ctl')
   ctl.querySelectorAll('button[data-text]').forEach(b => b.addEventListener('click', () => sendPrompt(b.dataset.text, b)))
   ctl.addEventListener('submit', ev => {
@@ -1569,6 +1622,49 @@ function mountLive() {
   lastSvg = 0
   lastFrame = 0
   liveKeys()
+  renderLiveChat()
+}
+
+// ---------- the live chat: the same chat as in the session, 1:1 ----------
+const pending = [] // { sid, text, at, failed }
+const sentByPage = new Set()
+let chatKeys = []
+const norm = t => String(t || '').trim().replace(/\s+/g, ' ')
+function renderLiveChat() {
+  const box = document.getElementById('lmsgs')
+  if (!box) return
+  const s = selected()
+  const head = stage.querySelector('.lhead')
+  if (head) {
+    head.querySelector('.licon').innerHTML = s ? (ICON[s.surface] || ICON.terminal) : ICON.terminal
+    head.querySelector('.ltitle').textContent = `Chat · ${s ? s.label : 'Claude Code'}`
+  }
+  const chat = (s && Array.isArray(s.model.chat)) ? s.model.chat : []
+  // A pending bubble leaves once its text shows up in the session's chat.
+  for (let i = pending.length - 1; i >= 0; i--) {
+    const p = pending[i]
+    const owner = sessions.get(p.sid)
+    const seen = owner && Array.isArray(owner.model.chat) && owner.model.chat.some(m => m.role !== 'claude' && norm(m.text) === norm(p.text) && m.at >= p.at - 10000)
+    if (seen || (p.failed && Date.now() - p.at > 6000)) pending.splice(i, 1)
+  }
+  const items = chat.map(m => ({ key: `${m.role}|${m.at}|${m.text.length}`, role: m.role, text: m.text }))
+  for (const p of pending) if (s && p.sid === s.id) items.push({ key: `pending|${p.at}|${p.failed ? 'x' : ''}`, role: 'pending', text: p.text, failed: p.failed })
+  const keys = items.map(i => i.key)
+  const html = it => {
+    if (it.role === 'claude') return `<div class="bub claude"><span class="who">Claude</span>${esc(it.text)}</div>`
+    if (it.role === 'you') return `<div class="bub you">${esc(it.text)}</div>`
+    if (it.role === 'plugin') return `<div class="bub plugin"><span class="tag">${sentByPage.has(norm(it.text)) ? 'from the orbit page' : 'from agent-orbit'}</span>${esc(it.text)}</div>`
+    return `<div class="bub plugin pending"><span class="tag">${it.failed ? 'not sent' : 'sending…'}</span>${esc(it.text)}</div>`
+  }
+  const isPrefix = chatKeys.length <= keys.length && chatKeys.every((k, i) => k === keys[i])
+  if (isPrefix) {
+    if (keys.length === chatKeys.length) return
+    box.insertAdjacentHTML('beforeend', items.slice(chatKeys.length).map(it => html(it).replace('class="bub', 'class="bub enter')).join(''))
+  } else {
+    box.innerHTML = items.length ? items.map(html).join('') : '<div class="lempty">No messages yet. Type a prompt in the session, or send one from here.</div>'
+  }
+  chatKeys = keys
+  box.scrollTop = box.scrollHeight
 }
 function liveKeys() {
   if (!liveOn) return
@@ -1589,11 +1685,16 @@ async function sendPrompt(text, button) {
   if (button) button.disabled = true
   try {
     const s = selected()
+    sentByPage.add(norm(text))
+    var mine = { sid: s ? s.id : 'default', text, at: Date.now(), failed: false }
+    pending.push(mine)
+    renderLiveChat()
     const res = await fetch('/prompt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, session: s ? s.id : undefined }) })
     if (!res.ok) throw new Error(String(res.status))
     toast(s ? `Sent to Claude Code · ${s.label}` : 'Sent to Claude Code')
     return true
   } catch {
+    if (typeof mine !== 'undefined') { mine.failed = true; renderLiveChat() }
     toast('Not sent: the bridge does not answer. Run bun bridge/serve.ts.', true)
     return false
   } finally {

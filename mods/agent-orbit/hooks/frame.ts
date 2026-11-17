@@ -4,10 +4,10 @@ import { AMBER, CYAN, GREEN, LIME, hash, shortModel } from './live'
 
 const DEFAULT = 0x01000000
 const SPIN = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'
-const DIM = 0x4a5568
-const FAINT = 0x2d3440
-const TEXT = 0xd8dee9
-const MUTED = 0x8899aa
+const DIM = 0x46576a
+const FAINT = 0x1f3d66
+const TEXT = 0xeaf1f8
+const MUTED = 0x9fb3c8
 
 function scale(color: number, k: number): number {
   const r = Math.min(255, Math.round(((color >> 16) & 255) * k))
@@ -93,10 +93,10 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
   const rx = Math.max(6, Math.min(W * 0.34, skyH * 1.5))
   const ry = Math.max(2, skyH * 0.34)
 
-  // 1. The legend: what each mark means.
+  // The legend: what each mark means.
   const legend: [string, number, string][] = [
     ['◉', LIME, 'main session'],
-    ['●', 0xff7ad9, 'agent'],
+    ['●', 0xe88f8f, 'agent'],
     ['◆', CYAN, 'reads a file'],
     ['◆', AMBER, 'acts'],
     ['★', LIME, 'task out'],
@@ -111,11 +111,11 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
     lx += item.length + 4
   }
 
-  // 2. The sky: stars that twinkle.
+  // The sky: stars that twinkle.
   for (let s = 0; s < Math.floor((W * skyH) / 50); s++) {
     const h = hash(`star${s}`)
     const glow = 0.5 + 0.5 * Math.sin(now / 900 + (h % 628) / 100)
-    put(h % W, top + ((h >>> 12) % skyH), glow > 0.85 ? '+' : '·', scale(0x8899aa, 0.2 + 0.4 * glow))
+    put(h % W, top + ((h >>> 12) % skyH), glow > 0.85 ? '+' : '·', scale(0xc7d4e2, 0.2 + 0.4 * glow))
   }
 
   // The orbit itself.
@@ -184,7 +184,7 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
     if (cy + 3 + i < top + skyH) write(cx - Math.floor(label.length / 2), cy + 3 + i, label, scale(LIME, 0.5))
   })
 
-  // 3. The agents: a trail, the name, and the files it read as satellites (its context).
+  // The agents: a trail, the name, and the files it read as satellites (its context).
   for (const agent of live.agents) {
     const done = agent.endedAt !== undefined
     if (!done) {
@@ -210,7 +210,7 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
     })
   }
 
-  // 4. The caption: the newest event in plain words, typed out.
+  // The caption: the newest event in plain words, typed out.
   let y = top + skyH
   const newest = live.events[live.events.length - 1]
   if (newest) {
@@ -223,7 +223,7 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
   }
   y++
 
-  // 5. The ticker: what happened just before, with how long ago.
+  // The ticker: what happened just before, with how long ago.
   const older = live.events.slice(-1 - ticker, -1).reverse()
   for (let i = 0; i < ticker; i++) {
     const event = older[i]
@@ -234,7 +234,7 @@ export function drawFrame(live: Live, columns: number, rows: number, now: number
     y++
   }
 
-  // 6. The list: one live row per loop.
+  // The list: one live row per loop.
   const running = live.agents.filter(a => !a.endedAt).length
   const head = ` AGENTS ${running} running · ${live.agents.length - running} done `
   for (let x = 0; x < W; x++) put(x, y, '─', FAINT)
