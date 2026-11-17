@@ -1,0 +1,9 @@
+{
+  "name": "agent-orbit",
+  "version": "0.1.0",
+  "description": "A live animated view in the terminal: the main session as a core, its agents in orbit, and the files they read flying in",
+  "license": "MIT",
+  "author": {
+    "name": "Like A Human"
+  }
+}
