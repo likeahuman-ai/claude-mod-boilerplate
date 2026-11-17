@@ -17,9 +17,18 @@ export type Agent = {
   acts: number
 }
 
+export type Particle = {
+  kind: 'spawn' | 'read' | 'act'
+  agentId: string
+  label: string
+  seed: number
+  at: number
+}
+
 export type Live = {
   main: Agent
   agents: Agent[]
+  particles: Particle[]
   files: string[]
   skills: string[]
 }
@@ -27,6 +36,8 @@ export type Live = {
 export const MAIN = 'main'
 export const LIME = 0xc6ff3d
 export const CYAN = 0x5ee0ff
+export const AMBER = 0xffc857
+export const GREEN = 0x6dffa8
 
 // One colour per agent, in order of spawn.
 export const PALETTE = [0x5ee0ff, 0xff7ad9, 0xffc857, 0x9d8cff, 0x6dffa8, 0xff8f5e, 0x7ab8ff]
@@ -35,6 +46,7 @@ export function newLive(now: number): Live {
   return {
     main: blankAgent(MAIN, 'main session', now, -1, LIME),
     agents: [],
+    particles: [],
     files: [],
     skills: [],
   }
@@ -54,6 +66,12 @@ export function blankAgent(id: string, type: string, now: number, slot: number, 
     reads: 0,
     acts: 0,
   }
+}
+
+export function hash(text: string): number {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
+  return h >>> 0
 }
 
 export function shortModel(model: string): string {

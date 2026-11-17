@@ -1,17 +1,20 @@
 import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
+import { drawFrame } from './frame'
 import type { Agent, Step } from './live'
-import { CYAN, PALETTE, baseName, blankAgent, newLive, shortModel } from './live'
+import { CYAN, MAIN, PALETTE, baseName, blankAgent, hash, newLive, shortModel } from './live'
 
 const PANE = 'agent-orbit'
+const RASTER = 'orbit'
 const READS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Skill', 'LS'])
 
 // A counter for the text view on surfaces without a Raster.
 const version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)
 
-// The live model. It starts over on a reload.
+// The live model and the size of the mounted Raster. Both start over on a reload.
 const live = newLive(Date.now())
+let size: { columns: number; rows: number } | undefined
 
 function whatOf(input: Record<string, unknown>, tool: string): string {
   const value = ['file_path', 'pattern', 'url', 'query', 'skill', 'command', 'description']
@@ -36,6 +39,16 @@ export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'orbit', description: 'Open the live agent orbit' })
     void $.ui.open({ id: PANE, title: 'Agent orbit' })
+
+    // The animation: about 16 frames a second, painted into the mounted Raster.
+    $.clock.every(60, () => {
+      const now = Date.now()
+      if (size) {
+        const cells = drawFrame(live, size.columns, size.rows, now)
+        void $.ui.blit({ requestId: PANE, key: RASTER, cells, ...size }).catch(() => {})
+      }
+    })
+
     return next(e)
   })
 
@@ -72,6 +85,7 @@ export const register: Register = on => {
       agent.task = e.description
       agent.model = shortModel(started.model)
       agent.startedAt = Date.now()
+      live.particles.push({ kind: 'spawn', agentId: agent.id, label: '', seed: 0, at: Date.now() })
       await update($, version, v => v + 1).catch(() => {})
     }
     return started
@@ -85,6 +99,15 @@ export const register: Register = on => {
     agent.steps = [...agent.steps, step].slice(-30)
     if (step.isRead) agent.reads++
     else agent.acts++
+    if (agent.id !== MAIN) {
+      live.particles.push({
+        kind: step.isRead ? 'read' : 'act',
+        agentId: agent.id,
+        label: baseName(what),
+        seed: hash(what),
+        at: Date.now(),
+      })
+    }
     await update($, version, v => v + 1).catch(() => {})
     return next(e)
   })
@@ -102,11 +125,21 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    // Every surface: a plain text view of the model, one row per loop.
+    // The terminal: one Raster, painted by the clock above.
+    if (e.surface === 'terminal') {
+      const { Raster } = $.ui.resolve(e)
+      const columns = Math.max(20, Math.min(160, e.props.bodyColumns))
+      const rows = Math.max(10, Math.min(48, e.props.scroll.bodyRows))
+      size = { columns, rows }
+      return <Raster key={RASTER} columns={columns} rows={rows} cells={drawFrame(live, columns, rows, Date.now())} />
+    }
+
+    // Other surfaces: a plain text view of the same model.
     const { Box, Text } = $.ui.resolve(e)
     await read($, version)
     return (
       <Box flexDirection="column">
+        <Text dimColor>The live orbit draws in the Claude CLI. Here is the list.</Text>
         {[live.main, ...live.agents].map(agent => (
           <Text>
             {agent.endedAt ? 'done' : 'runs'} · {agent.name} {agent.model} · read {agent.reads} · did {agent.acts}
