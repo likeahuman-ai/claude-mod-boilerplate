@@ -71,6 +71,16 @@ one reads mods/agent-orbit/hooks/frame.ts, one reads mods/agent-orbit/hooks/desk
 Each explains in 3 lines what its file does. Do not change any file.
 ```
 
+### Where it runs
+
+| | How to start it | Good to know |
+|---|---|---|
+| **Claude Code CLI** | From the root of this repo: `claude --plugin-dir mods/agent-orbit`, then type a prompt | Put the terminal in full screen, so the pane docks beside the chat. Below 144 columns it opens on your first prompt. |
+| **Claude desktop app** | In a chat, type: *"Load the plugin-authoring skill and copy the mod at `<path to>/mods/agent-orbit` into your mods folder."* Click **Turn them on** when the app asks. | The pane draws the orbit as an animated SVG with hover tooltips. |
+| **Live web page** | In either chat, type `/orbit web` | Needs [Bun](https://bun.sh). CLI and desktop chats can connect at the same time, one chip each. |
+
+A prompt from the page, or the mod's own debrief, starts only when the chat is idle. While Claude still works, the page shows it as "sending…".
+
 ### The live page
 
 Type `/orbit web`. The mod starts a small bridge (needs [Bun](https://bun.sh)) and opens **http://127.0.0.1:4747**, linked 1:1 to your chats:
