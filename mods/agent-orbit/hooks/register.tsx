@@ -15,6 +15,8 @@ const version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)
 // The live model and the size of the mounted Raster. Both start over on a reload.
 const live = newLive(Date.now())
 let size: { columns: number; rows: number } | undefined
+// Agents whose end the mod already reported to the chat.
+const reported = new Set<string>()
 
 function whatOf(input: Record<string, unknown>, tool: string): string {
   const value = ['file_path', 'pattern', 'url', 'query', 'skill', 'command', 'description']
@@ -132,6 +134,26 @@ export const register: Register = on => {
         say(live, `${agent.name} is done after ${s}s: read ${agent.reads}, did ${agent.acts}`, GREEN, Date.now())
       }
       await update($, version, v => v + 1).catch(() => {})
+
+      // The mod talks back: when the last running agent ends, it sends a prompt to the chat.
+      const wave = live.agents.filter(a => !reported.has(a.id))
+      if (wave.length > 0 && wave.every(a => a.endedAt !== undefined)) {
+        wave.forEach(a => reported.add(a.id))
+        const lines = wave.map(
+          a => `- ${a.name} (${a.model}), ${Math.round(((a.endedAt ?? 0) - a.startedAt) / 1000)}s, read ${a.reads}, did ${a.acts}: ${a.task}`,
+        )
+        say(live, 'The mod sends a debrief prompt to the chat', LIME, Date.now())
+        await update($, version, v => v + 1).catch(() => {})
+        void $.prompt
+          .submit({
+            text: [
+              `Agent orbit saw ${wave.length} agent(s) finish:`,
+              ...lines,
+              'Give a debrief in at most 4 lines: which agent read the most, and the one finding of each agent.',
+            ].join('\n'),
+          })
+          .catch(() => {})
+      }
     }
     return next(e)
   })
