@@ -95,7 +95,7 @@ export function baseName(text: string): string {
   return text.split('/').pop()?.slice(0, 22) ?? text
 }
 
-/** A tool call in plain words: "reads PROBLEMS.md", "searches for TODO". */
+/** A tool call in plain words: "reads frame.ts", "searches for TODO". */
 export function verbOf(tool: string, what: string): string {
   const name = baseName(what)
   switch (tool) {
