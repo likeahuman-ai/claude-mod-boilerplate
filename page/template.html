@@ -1,0 +1,939 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agent orbit tutorial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #060a14;
+  --navy: #0b1222;
+  --deep: #0e1629;
+  --raise: #121c33;
+  --line: #1c2946;
+  --line-2: #2a3b5f;
+  --text: #e8edf7;
+  --muted: #8b98b3;
+  --faint: #56627e;
+  --lime: #c6ff3d;
+  --cyan: #5ee0ff;
+  --amber: #ffc857;
+  --green: #6dffa8;
+  --pink: #ff7ad9;
+  --display: 'Bricolage Grotesque', ui-sans-serif, system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--ink);
+  color: var(--text);
+  font-family: var(--display);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(1100px 700px at 28% 55%, rgba(38, 64, 120, .28), transparent 70%),
+    radial-gradient(700px 500px at 90% 10%, rgba(198, 255, 61, .05), transparent 70%);
+  pointer-events: none;
+}
+.app {
+  position: relative;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  padding: 18px 28px 12px;
+  gap: 14px;
+}
+
+/* ---------- top: title and the rail ---------- */
+header { display: flex; align-items: center; gap: 36px; }
+.brand { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+.brand svg { flex: none; }
+.brand h1 { font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.brand h1 span { color: var(--muted); font-weight: 400; }
+.rail { flex: 1; display: grid; grid-template-columns: repeat(7, 1fr); position: relative; }
+.rail::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 7px; height: 1px; background: var(--line-2);
+}
+.rail .fill {
+  position: absolute; left: 0; top: 7px; height: 1px; background: var(--lime);
+  box-shadow: 0 0 8px var(--lime); transition: width .6s var(--ease);
+}
+.rail button {
+  position: relative; background: none; border: 0; color: var(--faint); cursor: pointer;
+  font: 500 12.5px/1.2 var(--display); text-align: left; padding: 22px 8px 0 0;
+  transition: color .3s;
+}
+.rail button::before {
+  content: ''; position: absolute; left: 0; top: 2px; width: 11px; height: 11px; border-radius: 50%;
+  background: var(--ink); border: 1.5px solid var(--line-2); transition: all .35s var(--ease);
+}
+.rail button b { font-family: var(--mono); font-weight: 500; margin-right: 6px; color: inherit; }
+.rail button:hover { color: var(--text); }
+.rail button.past { color: var(--muted); }
+.rail button.past::before { border-color: var(--lime); background: var(--lime); }
+.rail button.on { color: var(--text); }
+.rail button.on::before { border-color: var(--lime); background: var(--ink); box-shadow: 0 0 0 4px rgba(198,255,61,.16), 0 0 14px var(--lime); }
+.rail button:focus-visible { outline: 2px solid var(--lime); outline-offset: 4px; border-radius: 4px; }
+
+/* ---------- the two halves ---------- */
+main { min-height: 0; display: grid; grid-template-columns: 57fr 43fr; gap: 26px; }
+.stage { position: relative; min-height: 0; }
+.panel { position: relative; min-height: 0; display: flex; flex-direction: column; }
+footer { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: var(--faint); }
+footer kbd { font-family: var(--mono); font-size: 11.5px; color: var(--muted); border: 1px solid var(--line-2); border-radius: 5px; padding: 1px 6px; }
+.clock { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+.clock i { font-style: normal; color: var(--lime); }
+
+/* intro: the orbit takes the whole width */
+body.intro main { grid-template-columns: 1fr 0fr; gap: 0; }
+body.intro .panel { opacity: 0; pointer-events: none; }
+
+/* ---------- windows ---------- */
+.view { position: absolute; inset: 0; display: flex; flex-direction: column; }
+.view.enter { animation: viewIn .7s var(--ease) both; }
+@keyframes viewIn { from { opacity: 0; transform: translateY(10px) scale(.99); } to { opacity: 1; transform: none; } }
+.win {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #070b16; border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 40px 80px -30px rgba(0,0,0,.8), 0 0 0 1px rgba(255,255,255,.02) inset, 0 0 120px -60px rgba(94,224,255,.25);
+}
+.bar {
+  flex: none; height: 36px; display: flex; align-items: center; gap: 8px; padding: 0 14px;
+  background: linear-gradient(#111a2e, #0d1426); border-bottom: 1px solid var(--line);
+  font: 500 12px var(--mono); color: var(--muted);
+}
+.bar .dots { display: flex; gap: 7px; margin-right: 10px; }
+.bar .dots i { width: 11px; height: 11px; border-radius: 50%; background: #2a3550; }
+.bar .dots i:nth-child(1) { background: #ff5f57; } .bar .dots i:nth-child(2) { background: #febc2e; } .bar .dots i:nth-child(3) { background: #28c840; }
+.bar .grow { flex: 1; text-align: center; margin-right: 70px; }
+.body { flex: 1; min-height: 0; display: grid; grid-template-columns: 33fr 67fr; }
+
+/* the chat column, CLI style */
+.chat {
+  min-height: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-end;
+  padding: 14px 16px 10px; gap: 12px; border-right: 1px solid var(--line);
+  font: 400 12.5px/1.5 var(--mono); color: #c6cfdf;
+}
+.chat .head { margin-bottom: auto; color: var(--muted); font-size: 11.5px; border: 1px solid var(--line-2); border-radius: 8px; padding: 8px 10px; }
+.chat .head b { color: #d97757; font-weight: 500; }
+.msg { animation: msgIn .5s var(--ease) both; }
+@keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.msg.user { color: var(--text); background: #111a2e; border-radius: 6px; padding: 6px 8px; }
+.msg.user::before { content: '> '; color: var(--muted); }
+.msg .mark { color: var(--text); }
+.msg.agent .mark.run { color: var(--amber); animation: blink 1s steps(2) infinite; }
+.msg.agent .mark.done { color: var(--green); }
+.msg.agent .sub { color: var(--faint); padding-left: 2ch; }
+.msg.plugin { border: 1px solid rgba(198,255,61,.45); border-radius: 8px; padding: 8px 10px; background: rgba(198,255,61,.05); box-shadow: 0 0 30px -10px rgba(198,255,61,.35); white-space: pre-wrap; font-size: 11.5px; }
+.msg.plugin .who { color: var(--lime); display: block; margin-bottom: 4px; font-weight: 500; }
+.msg.claude { white-space: pre-wrap; }
+.msg.claude .mark { color: var(--text); }
+.prompt { flex: none; border-top: 1px solid var(--line-2); border-bottom: 1px solid var(--line-2); padding: 6px 2px; color: var(--faint); }
+.prompt::before { content: '> '; }
+.prompt i { display: inline-block; width: .6em; height: 1.1em; vertical-align: -2px; background: var(--muted); animation: blink 1.1s steps(2) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* the docked pane */
+.pane { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 10px 12px 12px; }
+.pane-title { flex: none; display: flex; justify-content: space-between; font: 500 11.5px var(--mono); color: var(--muted); padding: 0 2px 6px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+.pane-title b { color: var(--lime); font-weight: 500; }
+.pane-body { flex: 1; min-height: 0; position: relative; display: flex; align-items: center; justify-content: center; }
+.pane.closed { opacity: 0; transform: translateX(24px); }
+.pane { transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.hello { font: 500 26px var(--mono); color: var(--text); }
+.hello::after { content: ''; display: inline-block; width: .55em; height: 1em; margin-left: 6px; vertical-align: -3px; background: var(--lime); animation: blink 1.1s steps(2) infinite; }
+.cells { position: absolute; }
+.cells.bloom { filter: blur(5px) saturate(1.4); opacity: .55; mix-blend-mode: screen; }
+
+/* step 2: the text rows */
+.rows { width: 100%; align-self: flex-start; font: 400 13.5px/1.55 var(--mono); }
+.rows .note { color: var(--faint); margin-bottom: 12px; }
+.rows .row { display: grid; grid-template-columns: 5ch 12ch 7ch 8ch 8ch; gap: 0 1ch; padding: 5px 8px; border-radius: 6px; transition: background .6s; }
+.rows .row.flash { background: rgba(94,224,255,.12); transition: none; }
+.rows .row .last { grid-column: 2 / -1; color: var(--muted); font-size: 12.5px; }
+.rows .runs { color: var(--amber); } .rows .done { color: var(--green); }
+.rows .n { color: var(--cyan); } .rows .a { color: var(--amber); }
+.rows .ev { margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--line-2); color: var(--faint); font-size: 12px; }
+
+/* desktop app */
+.desk .bar { background: linear-gradient(#141c2f, #10182a); }
+.desk .body { grid-template-columns: 1fr; grid-template-rows: minmax(0, 1fr) minmax(0, 24%); }
+.desk .pane { order: 1; }
+.desk .chat { order: 2; border-right: 0; border-top: 1px solid var(--line); flex-direction: row; align-items: flex-end; gap: 16px; padding: 10px 16px 12px; }
+.desk .chat .head { display: none; }
+.desk .chat .msgs { flex: 1; min-width: 0; max-height: 100%; overflow: hidden; justify-content: flex-end; }
+.desk .prompt { flex: none; width: 26%; }
+.desk .chat { font-family: var(--display); font-size: 13px; line-height: 1.45; background: #0a1020; }
+.desk .chat .head { font-family: var(--display); }
+.desk .msg.user { background: #1a2440; border-radius: 12px 12px 4px 12px; padding: 8px 11px; margin-left: 14%; }
+.desk .msg.user::before { content: none; }
+.desk .msg.plugin { font-family: var(--mono); font-size: 11px; }
+.desk .prompt { border: 1px solid var(--line-2); border-radius: 12px; padding: 9px 12px; font-family: var(--display); }
+.desk .prompt::before { content: 'Reply to Claude…'; }
+.desk .prompt i { display: none; }
+.svgwrap { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.svgwrap svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 30px 60px rgba(0,0,0,.6)); }
+
+/* intro */
+.introv { position: absolute; inset: 0; }
+.introv .svgwrap { inset: 0 0 0 33%; }
+.introv .promise { position: absolute; left: 0; bottom: 8%; max-width: 31%; z-index: 2; }
+.introv .kicker { font: 500 13px var(--mono); color: var(--lime); margin-bottom: 18px; display: flex; gap: 10px; align-items: center; }
+.introv .kicker::before { content: ''; width: 28px; height: 1px; background: var(--lime); }
+.introv h2 { font-size: clamp(30px, 3.5vw, 60px); line-height: 1.02; letter-spacing: -.03em; font-weight: 700; }
+.introv p { margin-top: 20px; font-size: 18px; line-height: 1.5; color: var(--muted); max-width: 30ch; }
+.introv .go { margin-top: 28px; display: inline-flex; gap: 10px; align-items: center; font: 500 14px var(--display); color: var(--ink); background: var(--lime); border: 0; border-radius: 999px; padding: 11px 20px; cursor: pointer; box-shadow: 0 0 40px -6px rgba(198,255,61,.6); }
+.introv .go:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+
+/* ---------- the panel ---------- */
+.pin { display: flex; flex-direction: column; min-height: 0; flex: 1; }
+.pin.enter > * { animation: panelIn .6s var(--ease) both; }
+.pin.enter > *:nth-child(2) { animation-delay: .05s; } .pin.enter > *:nth-child(3) { animation-delay: .1s; }
+.pin.enter > *:nth-child(4) { animation-delay: .15s; } .pin.enter > *:nth-child(5) { animation-delay: .2s; }
+@keyframes panelIn { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+.phead { display: flex; align-items: flex-end; gap: 18px; }
+.phead .num { font: 800 clamp(50px, 7.6vh, 96px)/.8 var(--display); color: var(--lime); letter-spacing: -.05em; text-shadow: 0 0 40px rgba(198,255,61,.35); }
+.phead .of { font: 500 12.5px var(--mono); color: var(--faint); margin-bottom: 6px; }
+.phead h2 { font-size: clamp(28px, 3.9vh, 40px); line-height: 1; font-weight: 700; letter-spacing: -.025em; }
+.adds { margin-top: 12px; font-size: clamp(14px, 1.8vh, 17px); line-height: 1.45; color: #c3cde0; max-width: 56ch; }
+.code {
+  margin-top: 16px; flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 8px;
+  --fs: 14px;
+}
+.block { flex: none; min-width: 0; background: #080d1a; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.tab { display: flex; align-items: center; gap: 8px; padding: 4px 12px; background: #0d1427; border-bottom: 1px solid var(--line); font: 500 11.5px var(--mono); color: var(--muted); }
+.pair { flex: none; display: grid; grid-template-columns: 1.3fr 1fr; gap: 8px; align-items: start; }
+.tab::before { content: ''; width: 7px; height: 7px; border-radius: 2px; background: var(--line-2); }
+.tab.ts::before { background: #3e7bff; } .tab.json::before { background: var(--amber); }
+.tab em { font-style: normal; color: var(--faint); margin-left: auto; }
+pre { margin: 0; padding: 4px 0; font: 400 var(--fs)/1.5 var(--mono); font-variant-ligatures: none; color: #c9d3e6; tab-size: 2; }
+pre .ln { display: grid; grid-template-columns: 3.6ch 1.6ch minmax(0, 1fr); padding-right: 10px; border-left: 2px solid transparent; }
+pre .ln .no { text-align: right; color: #3a4766; padding-right: 1ch; user-select: none; }
+pre .ln .mk { color: var(--lime); font-weight: 700; font-size: .85em; }
+pre .ln .src { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+pre .ln.hl .src { white-space: pre-wrap; overflow-wrap: anywhere; }
+pre .ln.hl { background: linear-gradient(90deg, rgba(198,255,61,.13), rgba(198,255,61,.03)); border-left-color: var(--lime); }
+pre .ln.hl .no { color: var(--lime); }
+pre .gap { color: #34405c; padding-left: 4.5ch; font-size: .85em; line-height: 1.3; }
+.t-com { color: #5d6a88; font-style: italic; } .t-str { color: #a5e88a; } .t-kw { color: #c792ea; }
+.t-num { color: #ffb86b; } .t-fn { color: var(--cyan); } .t-dol { color: var(--lime); } .t-tag { color: #ff8fa3; } .t-key { color: #82aaff; }
+.notes { margin-top: 10px; list-style: none; display: grid; gap: 6px; }
+.notes li { display: grid; grid-template-columns: 22px 1fr; align-items: baseline; font-size: clamp(13.5px, 1.75vh, 16px); line-height: 1.4; color: #d3dbea; }
+.notes li b { font: 700 12px var(--mono); color: var(--ink); background: var(--lime); border-radius: 50%; width: 18px; height: 18px; display: inline-grid; place-items: center; }
+.see { margin-top: 12px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line-2); background: linear-gradient(90deg, rgba(94,224,255,.07), transparent); display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: baseline; font-size: clamp(14px, 1.85vh, 17px); line-height: 1.4; }
+.see span { font: 500 12px var(--mono); color: var(--cyan); white-space: nowrap; }
+
+/* ---------- live mode ---------- */
+.badge {
+  display: none; align-items: center; gap: 9px; flex: none; border: 1px solid rgba(198,255,61,.5); background: rgba(198,255,61,.08);
+  color: var(--lime); font: 600 12.5px var(--mono); padding: 6px 12px; border-radius: 999px; cursor: pointer;
+}
+.badge.show { display: inline-flex; }
+.badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 0 rgba(198,255,61,.7); animation: pulse 1.6s infinite; }
+.badge.idle { color: var(--muted); border-color: var(--line-2); background: none; }
+.badge.idle i { background: var(--muted); animation: none; }
+.badge:focus-visible { outline: 2px solid var(--lime); outline-offset: 3px; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(198,255,61,.7); } 70% { box-shadow: 0 0 0 10px rgba(198,255,61,0); } 100% { box-shadow: 0 0 0 0 rgba(198,255,61,0); } }
+body.live .rail { opacity: 0; pointer-events: none; }
+.livebox { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.liverow { display: flex; align-items: center; gap: 8px; }
+.chips { display: none; gap: 6px; }
+body.live .chips { display: flex; }
+.sess {
+  display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 999px; cursor: pointer;
+  border: 1px solid var(--line-2); background: var(--raise); color: var(--text); font: 500 12.5px var(--display);
+  transition: opacity .3s, background .3s, border-color .3s;
+}
+.sess svg { flex: none; color: var(--muted); }
+.sess .n { font: 600 11.5px var(--mono); color: var(--amber); }
+.sess .n.zero { color: var(--faint); }
+.sess.on { background: var(--lime); border-color: var(--lime); color: var(--ink); }
+.sess.on svg, .sess.on .n { color: var(--ink); }
+.sess.stale { opacity: .45; }
+.sess:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.same { display: none; font-size: 12px; color: var(--muted); }
+body.live .same { display: block; }
+.ctl {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 3;
+  display: flex; gap: 8px; align-items: center; padding: 8px; border-radius: 14px;
+  background: rgba(10, 16, 32, .88); border: 1px solid var(--line-2); backdrop-filter: blur(10px);
+  box-shadow: 0 20px 40px -20px rgba(0,0,0,.8); width: min(860px, calc(100% - 32px));
+}
+.ctl button, .ctl input { font: 500 13.5px var(--display); border-radius: 9px; height: 36px; }
+.ctl button { flex: none; padding: 0 14px; cursor: pointer; border: 1px solid var(--line-2); background: var(--raise); color: var(--text); }
+.ctl button:hover { border-color: var(--muted); }
+.ctl button.primary { background: var(--lime); border-color: var(--lime); color: var(--ink); font-weight: 600; }
+.ctl button:disabled { opacity: .5; cursor: default; }
+.ctl input { flex: 1; min-width: 0; padding: 0 12px; background: #070b16; border: 1px solid var(--line-2); color: var(--text); }
+.ctl input::placeholder { color: var(--faint); }
+.ctl :focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+.livev .win { height: calc(100% - 66px); }
+.livev .svgwrap { inset: 0 0 66px 0; }
+.toast {
+  position: fixed; left: 50%; bottom: 124px; transform: translate(-50%, 12px); opacity: 0; z-index: 10;
+  background: var(--lime); color: var(--ink); font: 600 14px var(--display); padding: 10px 18px; border-radius: 999px;
+  box-shadow: 0 0 40px -6px rgba(198,255,61,.6); transition: opacity .3s, transform .3s var(--ease); pointer-events: none;
+}
+.toast.err { background: var(--amber); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.livev .win .pane { flex: 1; }
+.wait { position: absolute; left: 50%; top: 14%; transform: translateX(-50%); font: 500 15px var(--mono); color: var(--muted); background: rgba(6,10,20,.75); border: 1px solid var(--line-2); border-radius: 999px; padding: 8px 16px; animation: blink 2.4s ease-in-out infinite; }
+.wait[hidden] { display: none; }
+.hint { font: 400 12px var(--mono); color: var(--faint); }
+.hint b { color: var(--muted); font-weight: 500; }
+@media (prefers-reduced-motion: reduce) {
+  .view.enter, .pin.enter > *, .msg { animation: none; }
+}
+</style>
+</head>
+<body class="intro">
+<div class="app">
+  <header>
+    <div class="brand">
+      <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><ellipse cx="13" cy="13" rx="11.5" ry="6.5" fill="none" stroke="#2a3b5f" stroke-dasharray="1.5 2.5"/><circle cx="13" cy="13" r="3.6" fill="#c6ff3d"/><circle cx="23.5" cy="10.5" r="2" fill="#5ee0ff"/></svg>
+      <h1>Build a Claude Code mod: agent orbit</h1>
+    </div>
+    <nav class="rail" id="rail" aria-label="Steps"><div class="fill" id="fill"></div></nav>
+    <div class="livebox">
+      <div class="liverow"><div class="chips" id="chips" role="tablist" aria-label="Sessions"></div>
+      <button class="badge" id="badge" title="Show the live orbit (L)"><i></i><span>LIVE · connected to Claude Code</span></button></div>
+      <div class="same" id="same">This page and the pane in each chat draw the same model.</div>
+    </div>
+  </header>
+  <main>
+    <section class="stage" id="stage" aria-live="off"></section>
+    <section class="panel" id="panel"></section>
+  </main>
+  <footer>
+    <span><span class="clock" id="clock"></span> <span class="hint" id="hint" hidden>· Run the bridge for live mode: <b>bun bridge/serve.ts</b></span></span>
+    <span id="keys"><kbd>←</kbd> <kbd>→</kbd> to move · <kbd>R</kbd> to replay the run · <kbd>F</kbd> for full screen</span>
+  </footer>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>/*__SOURCES__*/</script>
+<script type="module">/*__BUNDLE__*/</script>
+<script type="module">
+const O = window.Orbit
+const S = window.SOURCES
+
+// ---------- the steps ----------
+// `lines` are [from, to] line numbers in the real file; the page cuts the excerpt from SOURCES.
+const STEP1_RENDER = `on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+  const { Text } = $.ui.resolve(e)
+  return <Text>Hello, orbit</Text>
+})`
+
+const STEPS = [
+  { short: 'Intro' },
+  {
+    short: 'A pane', title: 'A pane', mode: 'hello',
+    adds: ['Three files make a mod. Claude Code calls the register function in it.', 'A command and a prompt open a pane. A render hook draws in that pane.'],
+    blocks: [
+      { file: 'plugin.json', path: '.claude-plugin/plugin.json', lines: [[1, 2], [6, 8]], pair: true },
+      { file: 'hooks.json', path: 'hooks/hooks.json', lines: [[1, 1]], pair: true },
+      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[44, 46], [72, 74], [77, 78]],
+        hl: { 46: 'Registers /orbit. Never give a command the name of a built-in.', 74: 'Opens the pane from a prompt. Then it opens at any terminal width.' } },
+      { text: STEP1_RENDER, path: 'hooks/register.tsx', tag: 'step 1 version', hlRel: { 1: 'Draws the pane with the id agent-orbit: the words "Hello, orbit".' } },
+    ],
+    see: 'You give Claude a task. The pane opens on the right and says "Hello, orbit".',
+  },
+  {
+    short: 'Track the agents', title: 'Track the agents', mode: 'rows',
+    adds: ['A plain model in the module holds the main session and one entry per agent.', 'Four hooks fill it: agent.spawn, tool.call, turn.complete and prompt.context.'],
+    blocks: [
+      { file: 'live.ts', path: 'hooks/live.ts', lines: [[33, 35], [37, 37], [40, 40]] },
+      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[11, 11], [81, 82], [95, 96], [102, 103], [113, 114], [116, 116], [138, 140]],
+        hl: { 96: 'Call next(e) first. Its result holds the new agentId and the model.', 114: 'e.agentId names the agent that made the call. No id means Main.', 116: 'Read, Grep, Glob and Skill are reads: context. Every other tool is an action.' } },
+    ],
+    see: 'Text rows fill while the run goes: who runs, how much it read, what it did last.',
+  },
+  {
+    short: 'Make it move', title: 'Make it move', mode: 'bare',
+    adds: ['One Raster replaces the text: a grid of coloured terminal cells.', 'A clock paints a new frame about 16 times a second with $.ui.blit.'],
+    blocks: [
+      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[50, 55], [174, 178]],
+        hl: { 50: 'Paints a new frame every 60 ms: about 16 frames a second.', 54: 'blit sends the cells. It must use the size of the mounted Raster.', 176: 'Sizes the Raster from the pane, so it fits a short, narrow dock.' } },
+      { file: 'frame.ts', path: 'hooks/frame.ts', lines: [[52, 52], [127, 132], [274, 274]] },
+    ],
+    see: 'Main pulses in the centre. Each agent orbits it, with a trail and a beam while it runs.',
+  },
+  {
+    short: 'Make it explain', title: 'Make it explain', mode: 'raster',
+    adds: ['Each hook writes one plain sentence with say and verbOf.', 'The frame adds a legend, a typed caption, a ticker and ◇ file chips.'],
+    blocks: [
+      { file: 'live.ts', path: 'hooks/live.ts', lines: [[79, 81], [99, 103]] },
+      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[120, 121], [123, 123]],
+        hl: { 121: 'Keeps the last 4 files that the agent read: its context.', 123: 'Each tool call becomes one plain sentence for the caption.' } },
+      { file: 'frame.ts', path: 'hooks/frame.ts', lines: [[215, 218]], hl: { 217: 'Types the caption out: one more letter every 12 ms.' } },
+    ],
+    see: 'The caption tells each event in plain words. The ◇ chips show what each agent read.',
+  },
+  {
+    short: 'Talk back', title: 'Talk back', mode: 'raster', talkBack: true,
+    adds: ['When the last agent of a wave ends, the mod sends a prompt to the chat.', 'A set of reported agents makes sure that it fires once per wave.'],
+    blocks: [
+      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[148, 166]],
+        hl: { 150: 'Fires only when every agent of this wave has ended.', 151: 'Remembers the reported agents, so the next wave starts clean.', 158: '$.prompt.submit puts the prompt in the chat: the mod talks back.' } },
+    ],
+    see: 'The plugin message lands in the chat. Claude answers it with a short debrief.',
+  },
+  {
+    short: 'The desktop view', title: 'The desktop view', mode: 'svg', talkBack: true,
+    adds: ['The desktop app has no Raster. The same model draws as one SVG.', 'SMIL animates it. A negative begin keeps the motion smooth on each redraw.'],
+    blocks: [
+      { file: 'desktop.ts', path: 'hooks/desktop.ts', lines: [[25, 27], [108, 110]],
+        hl: { 26: 'Starts each animation at its phase now, so a redraw does not jump.' } },
+      { file: 'register.tsx', path: 'hooks/register.tsx', lines: [[57, 61], [182, 187]],
+        hl: { 58: 'Draws the SVG again every 2 s while agents run.', 187: 'isInteractive turns on SMIL animation and hover tooltips.' } },
+    ],
+    see: 'The orbit in the desktop app: glowing nodes, flowing beams. Hover an agent for its task.',
+  },
+]
+
+// ---------- syntax colours ----------
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+const KW = 'import|from|export|const|let|function|return|if|else|for|of|await|async|new|type|void|true|false|undefined|continue|break|as|in|switch|case|default|null'
+const TOKEN = new RegExp([
+  '(\\/\\/.*$)',
+  '(`(?:\\\\.|[^`\\\\])*`?|\'(?:\\\\.|[^\'\\\\])*\'|"(?:\\\\.|[^"\\\\])*")',
+  `(\\b(?:${KW})\\b)`,
+  '(\\b0x[0-9a-fA-F]+\\b|\\b\\d[\\d_.]*\\b)',
+  '(<\\/?[A-Z][A-Za-z]*)',
+  '(\\$(?:\\.[A-Za-z]+)+)',
+  '([A-Za-z_][\\w]*)(?=\\s*\\()',
+].join('|'), 'g')
+function colour(line, json) {
+  let out = '', last = 0, m
+  TOKEN.lastIndex = 0
+  while ((m = TOKEN.exec(line))) {
+    out += esc(line.slice(last, m.index))
+    const [t, com, str, kw, num, tag, dol, fn] = m
+    let cls = com ? 't-com' : str ? (json && /^\s*:/.test(line.slice(m.index + t.length)) ? 't-key' : 't-str') : kw ? 't-kw' : num ? 't-num' : tag ? 't-tag' : dol ? 't-dol' : 't-fn'
+    out += `<span class="${cls}">${esc(t)}</span>`
+    last = m.index + t.length
+    if (t.length === 0) TOKEN.lastIndex++
+  }
+  return out + esc(line.slice(last))
+}
+
+function codeHtml(step) {
+  let mark = 0
+  const notes = []
+  const blocks = step.blocks.map(b => {
+    const isJson = (b.file || '').endsWith('.json')
+    let rows = []
+    if (b.text) {
+      b.text.split('\n').forEach((src, i) => {
+        const note = b.hlRel && b.hlRel[i + 1]
+        if (note) notes.push(note)
+        rows.push(`<div class="ln${note ? ' hl' : ''}"><span class="no">·</span><span class="mk">${note ? ++mark : ''}</span><span class="src">${colour(src, false) || ' '}</span></div>`)
+      })
+    } else {
+      const all = S[b.file].split('\n')
+      // Dedent the excerpt by its smallest indent, so the code gets the width.
+      const picked = b.lines.flatMap(([f, t]) => all.slice(f - 1, t)).filter(l => l.trim())
+      const cut = Math.min(...picked.map(l => l.match(/^ */)[0].length))
+      b.lines.forEach(([from, to], k) => {
+        if (k > 0) rows.push(`<div class="gap">⋯</div>`)
+        for (let n = from; n <= to; n++) {
+          const note = b.hl && b.hl[n]
+          if (note) notes.push(note)
+          rows.push(`<div class="ln${note ? ' hl' : ''}"><span class="no">${n}</span><span class="mk">${note ? ++mark : ''}</span><span class="src">${colour((all[n - 1] ?? '').slice(cut), isJson) || ' '}</span></div>`)
+        }
+      })
+    }
+    const kind = isJson ? 'json' : 'ts'
+    return `<div class="block"><div class="tab ${kind}">${b.path}${b.tag ? `<em>${b.tag}</em>` : ''}</div><pre>${rows.join('')}</pre></div>`
+  })
+  // Blocks marked `pair` sit side by side.
+  const parts = []
+  step.blocks.forEach((b, k) => {
+    if (b.pair && step.blocks[k - 1]?.pair) parts[parts.length - 1].push(blocks[k])
+    else parts.push([blocks[k]])
+  })
+  const html = parts.map(p => p.length > 1 ? `<div class="pair">${p.join('')}</div>` : p[0]).join('')
+  return { html, notes }
+}
+
+// ---------- the panel ----------
+const panel = document.getElementById('panel')
+function renderPanel(i) {
+  if (i === 0) { panel.innerHTML = ''; return }
+  const step = STEPS[i]
+  const { html, notes } = codeHtml(step)
+  panel.innerHTML = `<div class="pin${panelMounted ? ' enter' : ''}">
+    <div class="phead"><span class="num">${i}</span><div><div class="of">Step ${i} of 6</div><h2>${step.title}</h2></div></div>
+    <p class="adds">${step.adds.map(esc).join('<br>')}</p>
+    <div class="code" id="code">${html}</div>
+    <ol class="notes">${notes.map((n, k) => `<li><b>${k + 1}</b><span>${esc(n)}</span></li>`).join('')}</ol>
+    <div class="see"><span>What you see</span><div>${esc(step.see)}</div></div>
+  </div>`
+  panelMounted = true
+  fitCode()
+}
+let panelMounted = false
+// Shrinks the code font until every excerpt fits: no scroll at 1440×900 or 1920×1080.
+function fitCode() {
+  const code = document.getElementById('code')
+  if (!code) return
+  let fs = Math.min(16, Math.max(12, innerHeight / 62))
+  code.style.setProperty('--fs', fs + 'px')
+  while (fs > 11 && code.scrollHeight > code.clientHeight + 1) {
+    fs -= 0.25
+    code.style.setProperty('--fs', fs + 'px')
+  }
+}
+
+// ---------- the rail ----------
+const rail = document.getElementById('rail')
+STEPS.forEach((s, i) => {
+  const b = document.createElement('button')
+  b.innerHTML = i === 0 ? s.short : `<b>${i}</b>${s.short}`
+  b.addEventListener('click', () => go(i))
+  rail.appendChild(b)
+})
+function renderRail(i) {
+  ;[...rail.querySelectorAll('button')].forEach((b, k) => {
+    b.className = k === i ? 'on' : k < i ? 'past' : ''
+    b.setAttribute('aria-current', k === i ? 'step' : 'false')
+  })
+  document.getElementById('fill').style.width = `${(i / 6) * (6 / 7) * 100 + 0.5}%`
+}
+
+// ---------- the stage ----------
+const stage = document.getElementById('stage')
+let step = 0
+let run = null
+let view = null // the elements the loop paints into
+
+const chatHead = `<div class="head"><b>✻</b> Claude Code · ~/practice-repo<br>--plugin-dir ../mods/agent-orbit</div>`
+
+function windowHtml(kind, paneInner) {
+  const desk = kind === 'desk'
+  return `<div class="view enter"><div class="win ${desk ? 'desk' : 'term'}">
+    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="grow">${desk ? 'Claude · practice-repo' : 'practice-repo — claude'}</span></div>
+    <div class="body">
+      <div class="chat">${chatHead}<div class="msgs" style="display:flex;flex-direction:column;gap:12px"></div><div class="prompt"><i></i></div></div>
+      <div class="pane closed"><div class="pane-title"><b>Agent orbit</b><span class="meta"></span></div><div class="pane-body">${paneInner}</div></div>
+    </div>
+  </div></div>`
+}
+
+let mounted = false
+function mount(i) {
+  const s = STEPS[i]
+  const first = !mounted
+  mounted = true
+  document.body.classList.toggle('intro', i === 0)
+  if (i === 0) {
+    stage.innerHTML = `<div class="view enter introv">
+      <div class="svgwrap"></div>
+      <div class="promise"><div class="kicker">A class for Tools4Ever</div>
+        <h2>In 6 steps you build this: a live view of what Claude's agents do and read.</h2>
+        <p>One mod for the Claude CLI and the desktop app. The page runs the real mod code on a simulated run.</p>
+        <button class="go" id="start">Start with step 1 <span aria-hidden="true">→</span></button></div>
+    </div>`
+    document.getElementById('start').addEventListener('click', () => go(1))
+  } else if (s.mode === 'svg') {
+    stage.innerHTML = windowHtml('desk', '<div class="svgwrap"></div>')
+  } else if (s.mode === 'hello') {
+    stage.innerHTML = windowHtml('term', '<div class="hello">Hello, orbit</div>')
+  } else if (s.mode === 'rows') {
+    stage.innerHTML = windowHtml('term', '<div class="rows"></div>')
+  } else {
+    stage.innerHTML = windowHtml('term', '<canvas class="cells bloom"></canvas><canvas class="cells sharp"></canvas>')
+  }
+  if (first) stage.querySelector('.view')?.classList.remove('enter')
+  const q = sel => stage.querySelector(sel)
+  view = { msgs: q('.msgs'), pane: q('.pane'), meta: q('.pane-title .meta'), svg: q('.svgwrap'), rows: q('.rows'), sharp: q('canvas.sharp'), bloom: q('canvas.bloom'), body: q('.pane-body') }
+  if (view.sharp) sizeCanvas()
+}
+
+// The grid: as many cells as fit the pane, clamped like register.tsx does (20-160 × 10-48).
+let grid = null
+function sizeCanvas() {
+  const r = view.body.getBoundingClientRect()
+  const lh = Math.max(13, Math.min(22, r.height / 35))
+  const font = lh / 1.24
+  const ctx = view.sharp.getContext('2d')
+  ctx.font = `500 ${font}px 'JetBrains Mono', monospace`
+  const cw = ctx.measureText('M').width
+  const columns = Math.max(20, Math.min(160, Math.floor(r.width / cw)))
+  const rows = Math.max(10, Math.min(48, Math.floor(r.height / lh)))
+  const dpr = devicePixelRatio || 1
+  for (const c of [view.sharp, view.bloom]) {
+    c.width = Math.round(columns * cw * dpr); c.height = Math.round(rows * lh * dpr)
+    c.style.width = columns * cw + 'px'; c.style.height = rows * lh + 'px'
+  }
+  grid = { columns, rows, cw, lh, font, dpr }
+}
+
+// Step 3 has no explain layer yet: blank the legend row and the empty caption row.
+function blankExplain(cells, columns, rows) {
+  const blankRow = y => { for (let x = 0; x < columns; x++) cells[(y * columns + x) * 3] = 0x20 }
+  blankRow(0)
+  for (let y = 1; y < rows; y++) {
+    let t = ''
+    for (let x = 3; x < 10 && x < columns; x++) t += String.fromCodePoint(cells[(y * columns + x) * 3])
+    if (t.startsWith('Waiting')) blankRow(y)
+  }
+}
+const hex = c => '#' + (c & 0xffffff).toString(16).padStart(6, '0')
+function paintCells(live) {
+  const { columns, rows, cw, lh, font, dpr } = grid
+  const cells = O.frameCells(live, columns, rows, Date.now())
+  if (!liveOn && STEPS[step].mode === 'bare') blankExplain(cells, columns, rows)
+  const ctx = view.sharp.getContext('2d')
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, columns * cw, rows * lh)
+  ctx.font = `500 ${font}px 'JetBrains Mono', monospace`
+  ctx.textBaseline = 'middle'
+  ctx.textAlign = 'center'
+  let last = -1
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      const i = (y * columns + x) * 3
+      const ch = cells[i]
+      if (ch === 0x20) continue
+      const fg = cells[i + 1] === 0x01000000 ? 0xc8d0e0 : cells[i + 1]
+      if (fg !== last) { ctx.fillStyle = hex(fg); last = fg }
+      ctx.fillText(String.fromCodePoint(ch), x * cw + cw / 2, y * lh + lh / 2 + 1)
+    }
+  }
+  const b = view.bloom.getContext('2d')
+  b.setTransform(1, 0, 0, 1, 0, 0)
+  b.clearRect(0, 0, view.bloom.width, view.bloom.height)
+  b.drawImage(view.sharp, 0, 0)
+  view.meta.textContent = `${columns}×${rows} cells`
+}
+
+function paintSvg(model = run.live) {
+  if (!view.svg) return
+  view.svg.innerHTML = O.drawSvg(model, Date.now())
+}
+
+function paintRows() {
+  const live = run.live
+  const loops = [live.main, ...live.agents]
+  const rowsHtml = loops.map(a => {
+    const last = a.steps[a.steps.length - 1]
+    const fresh = last && Date.now() - last.at < 400
+    return `<div class="row${fresh ? ' flash' : ''}"><span class="${a.endedAt ? 'done' : 'runs'}">${a.endedAt ? 'done' : 'runs'}</span><span>${esc(a.name)}</span><span>${esc(a.model || '·')}</span><span>read <span class="n">${a.reads}</span></span><span>did <span class="a">${a.acts}</span></span><span class="last">${esc(last ? last.what : a.task || 'waits')}</span></div>`
+  }).join('')
+  view.rows.innerHTML = `<div class="note">// the live model, as text rows</div>${rowsHtml}`
+  view.meta.textContent = `${live.agents.length} agents`
+}
+
+function paintChat() {
+  const live = run.live
+  view.msgs.innerHTML = run.chat.map(m => {
+    if (m.kind === 'user') return `<div class="msg user">${esc(m.text)}</div>`
+    if (m.kind === 'agent') {
+      const a = live.agents.find(x => x.id === m.agentId)
+      const done = a.endedAt !== undefined
+      const s = Math.round(((a.endedAt ?? Date.now()) - a.startedAt) / 1000)
+      return `<div class="msg agent"><span class="mark ${done ? 'done' : 'run'}">⏺</span> ${esc(a.type)}(${esc(a.task)})<div class="sub">⎿ ${done ? `Done · ${a.reads} reads · ${a.acts} actions · ${s}s` : `Running on ${esc(a.model)}…`}</div></div>`
+    }
+    if (m.kind === 'plugin') return `<div class="msg plugin"><span class="who">The agent-orbit plugin sent a message:</span>${esc(m.text)}</div>`
+    return `<div class="msg claude"><span class="mark">⏺</span> ${esc(m.text)}</div>`
+  }).join('')
+  // Old messages keep their place without a new entrance.
+  ;[...view.msgs.children].forEach((el, k) => { if (k < seen) el.style.animation = 'none' })
+  seen = view.msgs.children.length
+}
+let seen = 0
+
+// ---------- the run ----------
+let lastFrame = 0, lastSvg = 0
+function startRun() {
+  const s = STEPS[step]
+  run = new O.Run(step === 0 || !!s.talkBack)
+  seen = 0
+  lastSvg = 0
+  if (view.msgs) view.msgs.innerHTML = ''
+  if (view.pane) view.pane.classList.add('closed')
+  if (view.svg) paintSvg()
+}
+
+function loop() {
+  requestAnimationFrame(loop)
+  if (liveOn && liveModel) { liveTick(Date.now()); return }
+  if (!run) return
+  const now = Date.now()
+  if (run.elapsed(now) > O.LENGTH) startRun()
+  const changed = run.tick(now)
+  const mode = step === 0 ? 'svg' : STEPS[step].mode
+  if (changed) {
+    if (view.msgs) paintChat()
+    // prompt.submit opens the pane.
+    if (view.pane && run.live.events.length > 0) view.pane.classList.remove('closed')
+  }
+  if (mode === 'svg') {
+    // Like the mod: draw on each change, and every 2 s while agents run.
+    if (changed || (run.busy() && now - lastSvg > 2000) || lastSvg === 0) { paintSvg(); lastSvg = now }
+  } else if (mode === 'rows') {
+    if (changed || now - lastFrame > 400) { paintRows(); lastFrame = now }
+  } else if (mode === 'bare' || mode === 'raster') {
+    // Like $.clock.every(60, …): one frame each 60 ms.
+    if (now - lastFrame >= 60) { paintCells(mode === 'bare' ? O.bare(run.live) : run.live); lastFrame = now }
+  }
+  const t = Math.min(O.LENGTH, run.elapsed(now))
+  document.getElementById('clock').innerHTML = `simulated run <i>${t.toFixed(1)}s</i> / ${O.LENGTH}s`
+}
+
+function go(i) {
+  leaveLive()
+  i = Math.max(0, Math.min(6, i))
+  step = i
+  renderRail(i)
+  mount(i)
+  renderPanel(i)
+  startRun()
+  try { history.replaceState(null, '', '#' + i) } catch {}
+}
+
+addEventListener('keydown', e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return
+  if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return
+  if (e.key === 'l' || e.key === 'L') { if (liveModel) enterLive(); return }
+  if (liveOn) {
+    if (e.key === 't' || e.key === 'T') { liveView = liveView === 'svg' ? 'term' : 'svg'; mountLive(); return }
+    if (e.key === 's' || e.key === 'S') { go(step); return }
+    if (e.key === 'Tab' && sessions.size > 1) {
+      e.preventDefault()
+      const ids = [...sessions.keys()]
+      select(ids[(ids.indexOf(selectedId) + (e.shiftKey ? ids.length - 1 : 1)) % ids.length], true)
+      return
+    }
+    if (e.key === 'r' || e.key === 'R') return
+  }
+  if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); go(step + 1) }
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(step - 1) }
+  else if (/^[0-6]$/.test(e.key)) go(+e.key)
+  else if (e.key === 'r' || e.key === 'R') startRun()
+  else if (e.key === 'f' || e.key === 'F') {
+    if (document.fullscreenElement) document.exitFullscreen?.()
+    else document.documentElement.requestFullscreen?.().catch(() => {})
+  }
+})
+let resizeT
+addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => { if (view && view.sharp) sizeCanvas(); fitCode() }, 120) })
+document.fonts?.ready.then(() => { if (view && view.sharp) sizeCanvas(); fitCode() })
+
+// ---------- live mode: the same model, from a real Claude Code session ----------
+// The bridge streams the mod's Live model over SSE (GET /events). The page then draws it
+// with the same drawSvg / drawFrame, and animates between messages with Date.now().
+let liveModel = null, liveOn = false, liveView = 'svg', lastMsg = 0, liveChanged = false, everLive = false
+// Two chats at once: the latest model per session.id, and which one the view draws.
+const sessions = new Map() // id -> { id, label, surface, model, lastMsg }
+let selectedId = null, pinned = false
+const chipsEl = document.getElementById('chips')
+const ICON = {
+  terminal: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x=".75" y="1.75" width="12.5" height="10.5" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M3.5 5.2 5.6 7 3.5 8.8M7 9h3.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  desktop: '<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x=".75" y="1.5" width="12.5" height="8.5" rx="1.6" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M5 12.6h4M7 10v2.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>',
+}
+const newestAt = s => { const ev = s.model.events; return ev.length ? ev[ev.length - 1].at : 0 }
+function selected() { return sessions.get(selectedId) }
+function select(id, byPerson) {
+  if (!sessions.has(id)) return
+  if (byPerson) pinned = true
+  if (id !== selectedId) {
+    selectedId = id
+    liveModel = sessions.get(id).model
+    lastMsg = sessions.get(id).lastMsg
+    liveChanged = true
+    lastSvg = 0
+  }
+  renderChips()
+}
+function renderChips() {
+  const now = Date.now()
+  const list = [...sessions.values()]
+  const key = list.map(s => s.id).join('|')
+  if (chipsEl.dataset.key !== key) {
+    chipsEl.dataset.key = key
+    chipsEl.innerHTML = list.map(s => `<button class="sess" role="tab" data-id="${esc(s.id)}"></button>`).join('')
+    liveKeys()
+    chipsEl.querySelectorAll('.sess').forEach(b => b.addEventListener('click', () => { select(b.dataset.id, true); if (!liveOn) enterLive() }))
+  }
+  chipsEl.querySelectorAll('.sess').forEach(b => {
+    const s = sessions.get(b.dataset.id)
+    if (!s) return
+    const running = s.model.agents.filter(a => a.endedAt === undefined).length
+    const html = `${ICON[s.surface] || ICON.terminal}<span>${esc(s.label)}</span><span class="n${running ? '' : ' zero'}">${running}</span>`
+    if (b.innerHTML !== html) b.innerHTML = html
+    b.classList.toggle('on', s.id === selectedId)
+    b.classList.toggle('stale', now - s.lastMsg > 30000)
+    b.setAttribute('aria-selected', String(s.id === selectedId))
+    b.title = `${s.label} (${s.surface}) · ${running} running${now - s.lastMsg > 30000 ? ' · no message for 30 s' : ''}`
+  })
+}
+setInterval(() => { if (sessions.size) renderChips() }, 1000)
+const badge = document.getElementById('badge')
+const hint = document.getElementById('hint')
+const keysEl = document.getElementById('keys')
+const tutorialKeys = keysEl.innerHTML
+badge.addEventListener('click', () => { if (liveModel) enterLive() })
+
+function setBadge(state) {
+  badge.classList.add('show')
+  badge.classList.toggle('idle', state !== 'live')
+  badge.querySelector('span').textContent = state === 'live'
+    ? (liveOn ? 'LIVE · connected to Claude Code' : 'LIVE session · press L')
+    : 'reconnecting to Claude Code…'
+}
+
+function connect() {
+  if (!/^https?:$/.test(location.protocol) || typeof EventSource === 'undefined') { hint.hidden = false; return }
+  let es
+  const open = () => {
+    es = new EventSource('/events')
+    es.onmessage = ev => {
+      let data
+      try { data = JSON.parse(ev.data) } catch { return }
+      if (!data || !data.main || !Array.isArray(data.agents)) return
+      delete data.sentAt
+      const info = data.session && data.session.id ? data.session : { id: 'default', label: 'Claude Code', surface: 'terminal' }
+      delete data.session
+      // JSON has no undefined: a null endedAt still means "runs".
+      for (const a of [data.main, ...data.agents]) if (a.endedAt == null) delete a.endedAt
+      for (const k of ['particles', 'events', 'files', 'skills']) if (!Array.isArray(data[k])) data[k] = []
+      const first = !liveModel
+      const now = Date.now()
+      sessions.set(info.id, { id: info.id, label: info.label || info.id, surface: info.surface || 'terminal', model: data, lastMsg: now })
+      // Until the person clicks a chip, follow the session with the newest event.
+      let want = selectedId && sessions.has(selectedId) ? selectedId : info.id
+      if (!pinned) for (const s of sessions.values()) if (newestAt(s) > newestAt(sessions.get(want))) want = s.id
+      if (want !== selectedId) select(want, false)
+      else renderChips()
+      if (info.id === selectedId) {
+        liveModel = data
+        lastMsg = now
+        liveChanged = true
+      }
+      everLive = true
+      hint.hidden = true
+      if (first) enterLive()
+      else setBadge('live')
+    }
+    es.onerror = () => {
+      if (!everLive) { es.close(); hint.hidden = false; return } // no bridge: stay in tutorial mode
+      setBadge('down')
+      // EventSource retries by itself; when it gives up, try again quietly.
+      if (es.readyState === EventSource.CLOSED) setTimeout(open, 3000)
+    }
+  }
+  open()
+  setTimeout(() => { if (!liveModel) hint.hidden = false }, 2000)
+}
+
+function enterLive() {
+  liveOn = true
+  setBadge('live')
+  mountLive()
+}
+
+function leaveLive() {
+  if (!liveOn) return
+  liveOn = false
+  document.body.classList.remove('live')
+  keysEl.innerHTML = tutorialKeys
+  if (liveModel) setBadge('live')
+}
+
+function mountLive() {
+  document.body.classList.add('intro', 'live')
+  ;[...rail.querySelectorAll('button')].forEach(b => { b.className = ''; b.setAttribute('aria-current', 'false') })
+  panel.innerHTML = ''
+  const wait = `<div class="wait" hidden>waiting for the session…</div>`
+  stage.innerHTML = liveView === 'svg'
+    ? `<div class="view enter livev"><div class="svgwrap"></div>${wait}</div>`
+    : `<div class="view enter livev"><div class="win term">
+        <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="grow">Agent orbit · the terminal view of the live session</span></div>
+        <div class="pane"><div class="pane-title"><b>Agent orbit</b><span class="meta"></span></div><div class="pane-body"><canvas class="cells bloom"></canvas><canvas class="cells sharp"></canvas></div></div>
+      </div>${wait}</div>`
+  stage.querySelector('.livev').insertAdjacentHTML('beforeend', `<form class="ctl" id="ctl" autocomplete="off">
+    <button type="button" class="primary" data-text="${esc(O.PROMPT)}">Run the demo</button>
+    <button type="button" data-text="Give a debrief of the agents that just ran, in at most 4 lines.">Ask for a debrief</button>
+    <input name="free" placeholder="Type a prompt for Claude Code" aria-label="A prompt for Claude Code">
+    <button type="submit">Send</button>
+  </form>`)
+  const ctl = document.getElementById('ctl')
+  ctl.querySelectorAll('button[data-text]').forEach(b => b.addEventListener('click', () => sendPrompt(b.dataset.text, b)))
+  ctl.addEventListener('submit', ev => {
+    ev.preventDefault()
+    const input = ctl.elements.free
+    const text = input.value.trim()
+    if (!text) { input.focus(); return }
+    sendPrompt(text, ctl.querySelector('button[type=submit]')).then(ok => { if (ok) input.value = '' })
+  })
+  const q = sel => stage.querySelector(sel)
+  view = { svg: q('.svgwrap'), sharp: q('canvas.sharp'), bloom: q('canvas.bloom'), body: q('.pane-body'), meta: q('.pane-title .meta') }
+  if (view.sharp) sizeCanvas()
+  lastSvg = 0
+  lastFrame = 0
+  liveKeys()
+}
+function liveKeys() {
+  if (!liveOn) return
+  keysEl.innerHTML = `${sessions.size > 1 ? '<kbd>Tab</kbd> for the next chat · ' : ''}<kbd>T</kbd> ${liveView === 'svg' ? 'for the terminal view' : 'for the desktop view'} · <kbd>S</kbd> for the steps · <kbd>F</kbd> for full screen`
+}
+
+// Two-way: the bridge queues the prompt, and the mod submits it into the chat.
+let toastT
+function toast(text, isError) {
+  const t = document.getElementById('toast')
+  t.textContent = text
+  t.classList.toggle('err', !!isError)
+  t.classList.add('show')
+  clearTimeout(toastT)
+  toastT = setTimeout(() => t.classList.remove('show'), 2600)
+}
+async function sendPrompt(text, button) {
+  if (button) button.disabled = true
+  try {
+    const s = selected()
+    const res = await fetch('/prompt', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ text, session: s ? s.id : undefined }) })
+    if (!res.ok) throw new Error(String(res.status))
+    toast(s ? `Sent to Claude Code · ${s.label}` : 'Sent to Claude Code')
+    return true
+  } catch {
+    toast('Not sent: the bridge does not answer. Run bun bridge/serve.ts.', true)
+    return false
+  } finally {
+    if (button) button.disabled = false
+  }
+}
+
+function liveTick(now) {
+  const m = liveModel
+  const busy = m.agents.some(a => a.endedAt === undefined)
+  const wait = stage.querySelector('.wait')
+  if (wait) wait.hidden = m.agents.length > 0
+  if (liveView === 'svg') {
+    // Like the mod: draw on each change, and every 2 s while agents run.
+    if (liveChanged || lastSvg === 0 || (busy && now - lastSvg > 2000)) { paintSvg(m); lastSvg = now }
+  } else if (now - lastFrame >= 60) {
+    paintCells(m)
+    lastFrame = now
+  }
+  liveChanged = false
+  document.getElementById('clock').innerHTML = `live session · last update <i>${Math.max(0, Math.round((now - lastMsg) / 1000))}s</i> ago`
+}
+
+go(+(location.hash.slice(1)) || 0)
+loop()
+connect()
+</script>
+</body>
+</html>

@@ -1,7 +1,7 @@
 # Master prompt: build the agent orbit, step by step
 
 Paste everything between the two lines into Claude Code, in an empty folder or in
-`practice-repo`. Claude builds the mod in 6 steps and stops after each step, so the
+`practice-repo`. Claude builds the mod in 7 steps and stops after each step, so the
 class can see, read and ask. Type `next` to go on. Steps 1 to 5 make the CLI view;
 step 6 adds the desktop view to the same mod.
 
@@ -16,7 +16,7 @@ Load the `plugin-authoring` skill first and use its types file for every API nam
 
 ## How we work
 
-- Build in the 6 steps below. After each step, stop and give me:
+- Build in the 7 steps below. After each step, stop and give me:
   1. what we built, in 2 lines,
   2. the one hook or API call that makes it work, with its line of code,
   3. how I see it work now.
@@ -82,6 +82,18 @@ animation and `<title>` hover tooltips). Put the drawing in `hooks/desktop.ts`:
 The SVG is drawn again on each change, so start every animation at its phase: a
 negative `begin` (`now % duration`), so the motion runs on without a jump. Read the
 state atom in the render so it redraws, and bump it every 2 s while agents run.
+
+**Step 7. The live page, like a build board.** Write `bridge/serve.ts` (Bun): it
+serves the page on `127.0.0.1:4747`, takes the model at `POST /state`, streams it to
+every page at `GET /events` (Server-Sent Events), and queues prompts from the page at
+`POST /prompt`, per chat. In the mod:
+- post the model plus `session: { id, label, surface }` to `/state`, about 3 times a
+  second while agents run, and every 3 s when idle; wait 5 s after a failed post,
+- read the prompts in the bridge's answer and send each with `$.prompt.submit`,
+- `/orbit web` starts the bridge when `/health` does not answer (`$.process.run` with
+  `nohup … &`, so it outlives the turn) and opens the page with `open`.
+On the page: one chip per chat, a LIVE badge, the orbit of the selected chat, and
+buttons that post a prompt to it.
 
 ## Rules we learned the hard way
 

@@ -30,3 +30,15 @@ Check that the last step is the finished mod:
 ```
 diff -ru steps/step-6/agent-orbit mods/agent-orbit
 ```
+
+## Step 7: the live web page (like the build board)
+
+Adds `mirror` and `ensureBridge` to `register.tsx`, and the bridge in `bridge/serve.ts`.
+
+- The mod posts its live model to the bridge on `127.0.0.1:4747`, about 3 times a second while agents run.
+- The bridge streams each post to every open page (`/events`), so the page and the pane draw the same model.
+- `/orbit web` starts the bridge when it does not answer, and opens the page.
+- A button on the page queues a prompt (`/prompt`). The mod of that chat takes it with its next post and submits it into the chat.
+- Each chat has its own chip on the page, so a CLI chat and a desktop chat can both connect.
+
+Diff: `diff -ru steps/step-6/agent-orbit steps/step-7/agent-orbit`
