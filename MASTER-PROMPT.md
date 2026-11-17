@@ -1,7 +1,7 @@
 # Master prompt: build the agent orbit, step by step
 
 Paste everything between the two lines into Claude Code, in an empty folder or in
-`practice-repo`. Claude builds the mod in 7 steps and stops after each step, so the
+the root of this repo. Claude builds the mod in 7 steps and stops after each step, so the
 class can see, read and ask. Type `next` to go on. Steps 1 to 5 make the CLI view;
 step 6 adds the desktop view to the same mod.
 
@@ -52,7 +52,7 @@ each running agent. Repaint it with `$.clock.every(60, ...)` and `$.ui.blit`.
 **Step 4. Make it explain.** Add to the frame:
 - a legend row: ◉ main session, ● agent, ◆ reads a file, ◆ acts, ★ task out, ✔ done,
 - a caption that types out the newest event in plain words
-  ("Explore 2 reads PROBLEMS.md", "Main hands Explore 1 a task"),
+  ("Explore 2 reads frame.ts", "Main hands Explore 1 a task"),
 - a ticker of the 2 events before it, with how long ago,
 - the files each agent read as small `◇ file` labels beside it: its context,
 - a list row per agent: spinner, name, live timer, last step.
@@ -115,11 +115,11 @@ buttons that post a prompt to it.
 Tell me to start a new CLI session with `claude --plugin-dir <the mod folder>` and to
 type this prompt:
 
-    Use three Explore agents in parallel on the haiku model. One reads PROBLEMS.md,
-    one reads SUGGESTIONS.md, one reads PARKING.md. Each returns the top 3 themes,
-    one line each. Do not change any file.
+    Use three Explore agents in parallel on the haiku model. One reads mods/agent-orbit/hooks/register.tsx,
+    one reads mods/agent-orbit/hooks/frame.ts, one reads mods/agent-orbit/hooks/desktop.ts.
+    Each explains in 3 lines what its file does. Do not change any file.
 
-If the folder has no such files, make the three files with a few `- ` lines first.
+If the folder has no such files, point the three agents at three files the folder has.
 Done means: the orbit moves, the caption explains each event, and the debrief
 prompt shows up in the chat with Claude's answer. For step 6, run the same prompt in
 the Claude desktop app, with the mod folder loaded there.

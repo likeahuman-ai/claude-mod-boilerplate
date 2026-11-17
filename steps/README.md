@@ -2,10 +2,10 @@
 
 Each step is a complete mod that loads on its own. Each step is the previous step plus one addition. Step 6 equals `mods/agent-orbit`.
 
-Run a step from `practice-repo`:
+Run a step from the repo root:
 
 ```
-claude --plugin-dir ../steps/step-3/agent-orbit
+claude --plugin-dir steps/step-3/agent-orbit
 ```
 
 (Adjust the path to where `steps/` lives. The engine writes `.claude-plugin/types` on first load; it is not part of the snapshots.)
