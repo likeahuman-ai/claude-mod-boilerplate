@@ -1,5 +1,5 @@
 import { atom, read, update } from 'claude-code'
-import type { Register } from 'claude-code'
+import type { EngineInterface, Register } from 'claude-code'
 
 import { drawSvg } from './desktop'
 import { drawFrame } from './frame'
@@ -41,9 +41,63 @@ function loopOf(id: string | undefined): Agent {
   return agent
 }
 
+// Step 7: a live web page, like the build board. The mod posts its model to a small
+// bridge (bridge/serve.ts) about 3 times a second while agents run; the bridge streams
+// it to every open page, so the page and the pane draw the same model. The bridge
+// answers each post with the prompts the page queued, and the mod sends them to Claude.
+const BRIDGE = 'http://127.0.0.1:4747'
+let lastSent = 0
+let bridgeDownUntil = 0
+// Who this chat is on the page: the page shows one chip per session, and a button
+// sends its prompt to the session that is selected there.
+const session = { id: crypto.randomUUID(), label: 'Claude Code', surface: 'terminal' as string }
+
+function mirror($: EngineInterface, now: number): void {
+  const busy = live.agents.some(a => a.endedAt === undefined) || now - (live.events[live.events.length - 1]?.at ?? 0) < 3000
+  if (now < bridgeDownUntil || now - lastSent < (busy ? 300 : 3000)) return
+  lastSent = now
+  void $.http
+    .fetch(`${BRIDGE}/state`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...live, sentAt: now, session }) })
+    .then(async r => {
+      if (!r.ok) {
+        bridgeDownUntil = now + 5000
+        return
+      }
+      // A prompt from the page goes into the chat as if the person typed it.
+      const { prompts } = JSON.parse(r.text) as { prompts?: string[] }
+      for (const text of prompts ?? []) {
+        say(live, 'The web page sends a prompt to the chat', LIME, Date.now())
+        $.ui.toast('The orbit page sent a prompt to Claude')
+        await $.prompt.submit({ text, asUser: true })
+      }
+    })
+    .catch(() => {
+      bridgeDownUntil = now + 5000
+    })
+}
+
+// Starts the bridge when it does not answer (detached, so it outlives the turn), like /board.
+async function ensureBridge($: EngineInterface): Promise<boolean> {
+  const up = async () => (await $.http.fetch(`${BRIDGE}/health`).catch(() => ({ ok: false }))).ok
+  if (await up()) return true
+  // The mod sits in <repo>/mods/agent-orbit; the bridge in <repo>/bridge.
+  const start = `cd "${$.plugin.root}" && { [ -d .claude-plugin ] || cd ..; } && cd ../.. && nohup bun bridge/serve.ts > /tmp/agent-orbit-bridge.log 2>&1 &`
+  await $.process.run(['sh', '-c', start])
+  for (let i = 0; i < 20; i++) {
+    await $.clock.sleep(500)
+    if (await up()) {
+      bridgeDownUntil = 0
+      return true
+    }
+  }
+  return false
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'orbit', description: 'Open the live agent orbit' })
+    session.surface = e.surface ?? 'terminal'
+    session.label = `${session.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${e.cwd.split('/').pop() ?? ''}`
+    await $.command.register({ name: 'orbit', description: 'Open the live agent orbit; /orbit web opens the live web page' })
     void $.ui.open({ id: PANE, title: 'Agent orbit' })
 
     // The animation: about 16 frames a second, painted into the mounted Raster.
@@ -53,6 +107,7 @@ export const register: Register = on => {
         const cells = drawFrame(live, size.columns, size.rows, now)
         void $.ui.blit({ requestId: PANE, key: RASTER, cells, ...size }).catch(() => {})
       }
+      mirror($, now)
       // The desktop SVG animates by itself; it only needs a redraw every 2 s while agents run.
       const busy = live.agents.some(a => a.endedAt === undefined)
       if (vectorShown && busy && now - lastRedraw > 2000) {
@@ -64,9 +119,15 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('command.run', { command: 'orbit' }, async $ => {
+  on('command.run', { command: 'orbit' }, async ($, e) => {
+    // `/orbit web` starts the bridge and opens the live page, like `/board`.
+    if (e.args.trim() === 'web') {
+      if (!(await ensureBridge($))) return { text: 'The bridge did not start. See /tmp/agent-orbit-bridge.log (it needs bun).' }
+      await $.process.run(['open', BRIDGE])
+      return { text: `The live orbit page is open: ${BRIDGE}` }
+    }
     await $.ui.open({ id: PANE, title: 'Agent orbit' })
-    return { text: 'Agent orbit opened.' }
+    return { text: 'Agent orbit opened. Type /orbit web for the live web page.' }
   })
 
   // A prompt the person enters counts as their ask: the pane opens at any width.
@@ -169,6 +230,12 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
+    // The surface that draws the pane names this chat on the page (also after a reload).
+    if (session.surface !== e.surface || session.label === 'Claude Code') {
+      session.surface = e.surface
+      const folder = (await $.session.cwd().catch(() => '')).split('/').pop() ?? ''
+      session.label = `${e.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${folder}`
+    }
     // The terminal: one Raster, painted by the clock above.
     if (e.surface === 'terminal') {
       const { Raster } = $.ui.resolve(e)
