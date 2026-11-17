@@ -8,8 +8,19 @@ let last = ''
 // Prompts the page sends, per session. Each mod takes its own with its next post.
 const queues = new Map<string, string[]>()
 let latestSession = ''
-// The latest model per session, sent to a page when it connects.
+// The latest model per session, sent to a page when it connects; a chat that is quiet for 60 s is dropped.
 const latest = new Map<string, string>()
+const seen = new Map<string, number>()
+setInterval(() => {
+  const old = Date.now() - 60_000
+  seen.forEach((at, id) => {
+    if (at < old) {
+      seen.delete(id)
+      latest.delete(id)
+      queues.delete(id)
+    }
+  })
+}, 10_000)
 
 function send(controller: ReadableStreamDefaultController<Uint8Array>, data: string) {
   try {
@@ -36,6 +47,7 @@ Bun.serve({
       const id = (JSON.parse(last) as { session?: { id?: string } }).session?.id ?? ''
       latestSession = id
       latest.set(id, last)
+      seen.set(id, Date.now())
       const prompts = queues.get(id) ?? []
       queues.delete(id)
       return Response.json({ prompts })

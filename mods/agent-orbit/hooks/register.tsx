@@ -4,7 +4,7 @@ import type { EngineInterface, Register } from 'claude-code'
 import { drawSvg } from './desktop'
 import { drawFrame } from './frame'
 import type { Agent, Step } from './live'
-import { AMBER, CYAN, GREEN, LIME, MAIN, PALETTE, baseName, blankAgent, hash, newLive, say, shortModel, verbOf } from './live'
+import { AMBER, CYAN, GREEN, LIME, MAIN, PALETTE, addChat, baseName, blankAgent, hash, newLive, say, shortModel, verbOf } from './live'
 
 const PANE = 'agent-orbit'
 const RASTER = 'orbit'
@@ -12,6 +12,8 @@ const READS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Skill',
 
 // A counter for the text view on surfaces without a Raster.
 const version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)
+// This chat's id on the live page. Kept in the session's state, so a reload of the mod keeps it.
+const sessionId = atom({ plugin: 'agent-orbit', key: 'sessionId' } as const, '')
 
 // The live model and the size of the mounted Raster. Both start over on a reload.
 const live = newLive(Date.now())
@@ -41,7 +43,7 @@ function loopOf(id: string | undefined): Agent {
   return agent
 }
 
-// Step 7: a live web page, like the build board. The mod posts its model to a small
+// The live web page, like the build board. The mod posts its model to a small
 // bridge (bridge/serve.ts) about 3 times a second while agents run; the bridge streams
 // it to every open page, so the page and the pane draw the same model. The bridge
 // answers each post with the prompts the page queued, and the mod sends them to Claude.
@@ -95,7 +97,12 @@ async function ensureBridge($: EngineInterface): Promise<boolean> {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    session.surface = e.surface ?? 'terminal'
+    // One id per chat, kept across reloads; the surfaces say whether it is the desktop app.
+    const kept = await read($, sessionId).catch(() => '')
+    if (kept) session.id = kept
+    else await update($, sessionId, () => session.id).catch(() => {})
+    const surfaces = await $.session.surfaces()
+    session.surface = surfaces.includes('desktop') ? 'desktop' : (e.surface ?? 'terminal')
     session.label = `${session.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${e.cwd.split('/').pop() ?? ''}`
     await $.command.register({ name: 'orbit', description: 'Open the live agent orbit; /orbit web opens the live web page' })
     void $.ui.open({ id: PANE, title: 'Agent orbit' })
@@ -134,6 +141,8 @@ export const register: Register = on => {
   on('prompt.submit', async ($, e, next) => {
     void $.ui.open({ id: PANE, title: 'Agent orbit' }).catch(() => {})
     if (e.origin.kind !== 'plugin') say(live, 'You give Main a task', LIME, Date.now())
+    // The chat itself goes to the live page too: what was typed, and who sent it.
+    addChat(live, e.origin.kind === 'plugin' ? 'plugin' : 'you', e.text, Date.now())
     await update($, version, v => v + 1).catch(() => {})
     return next(e)
   })
@@ -197,6 +206,8 @@ export const register: Register = on => {
 
   // An agent ends: it parks with a check mark.
   on('turn.complete', async ($, e, next) => {
+    // Claude's answer to the chat (the main loop, not an agent) goes to the live page.
+    if (!e.agentId && !e.isAborted && e.answer.trim()) addChat(live, 'claude', e.answer.trim(), Date.now())
     if (e.agentId) {
       const agent = live.agents.find(a => a.id === e.agentId)
       if (agent && agent.endedAt === undefined) {
@@ -231,7 +242,7 @@ export const register: Register = on => {
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     // The surface that draws the pane names this chat on the page (also after a reload).
-    if (session.surface !== e.surface || session.label === 'Claude Code') {
+    if (session.label === 'Claude Code') {
       session.surface = e.surface
       const folder = (await $.session.cwd().catch(() => '')).split('/').pop() ?? ''
       session.label = `${e.surface === 'desktop' ? 'Desktop' : 'CLI'} · ${folder}`

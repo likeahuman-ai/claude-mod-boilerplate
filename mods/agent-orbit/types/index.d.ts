@@ -3,6 +3,6 @@ export type Version = number
 
 declare module 'claude-code' {
   interface PluginState {
-    'agent-orbit': { version: Version }
+    'agent-orbit': { version: Version; sessionId: string }
   }
 }
