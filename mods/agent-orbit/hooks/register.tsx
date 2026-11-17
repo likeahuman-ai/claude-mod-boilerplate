@@ -1,6 +1,36 @@
+import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
+import type { Agent, Step } from './live'
+import { CYAN, PALETTE, baseName, blankAgent, newLive, shortModel } from './live'
+
 const PANE = 'agent-orbit'
+const READS = new Set(['Read', 'Grep', 'Glob', 'WebFetch', 'WebSearch', 'Skill', 'LS'])
+
+// A counter for the text view on surfaces without a Raster.
+const version = atom({ plugin: 'agent-orbit', key: 'version' } as const, 0)
+
+// The live model. It starts over on a reload.
+const live = newLive(Date.now())
+
+function whatOf(input: Record<string, unknown>, tool: string): string {
+  const value = ['file_path', 'pattern', 'url', 'query', 'skill', 'command', 'description']
+    .map(key => input[key])
+    .find(v => typeof v === 'string')
+  return String(value ?? tool)
+}
+
+function loopOf(id: string | undefined): Agent {
+  if (!id) return live.main
+  let agent = live.agents.find(a => a.id === id)
+  if (!agent) {
+    const slot = live.agents.length
+    agent = blankAgent(id, 'agent', Date.now(), slot, PALETTE[slot % PALETTE.length] ?? CYAN)
+    agent.name = `Agent ${slot + 1}`
+    live.agents.push(agent)
+  }
+  return agent
+}
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -17,11 +47,72 @@ export const register: Register = on => {
   // A prompt the person enters counts as their ask: the pane opens at any width.
   on('prompt.submit', async ($, e, next) => {
     void $.ui.open({ id: PANE, title: 'Agent orbit' }).catch(() => {})
+    await update($, version, v => v + 1).catch(() => {})
+    return next(e)
+  })
+
+  // The context the session carries before its first word: its instruction files.
+  on('prompt.context', async ($, e, next) => {
+    live.files = (e.instructionFiles ?? []).map(file => `${file.kind}: ${baseName(file.path)}`)
+    await update($, version, v => v + 1).catch(() => {})
+    return next(e)
+  })
+
+  on('skill.prompt', async ($, e, next) => {
+    if (!live.skills.includes(e.skill)) live.skills.push(e.skill)
+    return next(e)
+  })
+
+  // A new agent: it takes a slot in the orbit, and a star flies out to it.
+  on('agent.spawn', async ($, e, next) => {
+    const started = await next(e)
+    if (started.deny === undefined && started.agentId) {
+      const agent = loopOf(started.agentId)
+      agent.type = e.subagentType
+      agent.task = e.description
+      agent.model = shortModel(started.model)
+      agent.startedAt = Date.now()
+      await update($, version, v => v + 1).catch(() => {})
+    }
+    return started
+  })
+
+  // Every tool call: a read flies in from outside, an action reports back to the core.
+  on('tool.call', async ($, e, next) => {
+    const agent = loopOf(e.agentId)
+    const what = whatOf(e as unknown as Record<string, unknown>, e.tool)
+    const step: Step = { tool: e.tool, what, isRead: READS.has(e.tool), at: Date.now() }
+    agent.steps = [...agent.steps, step].slice(-30)
+    if (step.isRead) agent.reads++
+    else agent.acts++
+    await update($, version, v => v + 1).catch(() => {})
+    return next(e)
+  })
+
+  // An agent ends: it parks with a check mark.
+  on('turn.complete', async ($, e, next) => {
+    if (e.agentId) {
+      const agent = live.agents.find(a => a.id === e.agentId)
+      if (agent && agent.endedAt === undefined) {
+        agent.endedAt = Date.now()
+      }
+      await update($, version, v => v + 1).catch(() => {})
+    }
     return next(e)
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
-    const { Text } = $.ui.resolve(e)
-    return <Text>Hello, orbit</Text>
+    // Every surface: a plain text view of the model, one row per loop.
+    const { Box, Text } = $.ui.resolve(e)
+    await read($, version)
+    return (
+      <Box flexDirection="column">
+        {[live.main, ...live.agents].map(agent => (
+          <Text>
+            {agent.endedAt ? 'done' : 'runs'} · {agent.name} {agent.model} · read {agent.reads} · did {agent.acts}
+          </Text>
+        ))}
+      </Box>
+    )
   })
 }
